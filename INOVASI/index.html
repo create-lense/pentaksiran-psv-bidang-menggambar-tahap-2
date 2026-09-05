@@ -1,0 +1,1788 @@
+
+<!doctype html>
+<html lang="ms">
+<head>
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#17324d">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CREATIVE.LENSE AI</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <style>
+    :root {
+      --ink: #17324d;
+      --blue: #164e63;
+      --coral: #e85d4a;
+      --mustard: #f2b84b;
+      --cream: #fffaf1;
+      --muted: #62717f;
+      --line: rgba(23, 50, 77, .14);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; width: 100%; font-family: system-ui, -apple-system, sans-serif; color: var(--ink); }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    :focus-visible { outline: 3px solid rgba(232, 93, 74, .42); outline-offset: 3px; }
+    .app-shell { width: 100%; min-height: 100vh; position: relative; overflow: hidden; }
+    main { max-width: 1600px; margin: 0 auto; }
+    @media (min-width: 900px) { header > div, main > section { min-width: 840px; } }
+    .orientation-notice { display: none; }
+    /* Gaya Modal Rubrik PSV */
+    .modal-rubrik {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      overflow-y: auto;
+    }
+    .modal-rubrik:not(.hidden) { display: block; }
+    .modal-content-rubrik {
+      background-color: #ffffff;
+      margin: 4% auto;
+      padding: 24px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 900px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    .close-rubrik {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close-rubrik:hover { color: #000; }
+    .rubrik-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 0.88rem;
+    }
+    .rubrik-table th, .rubrik-table td {
+      border: 1px solid #cbd5e1;
+      padding: 10px;
+      text-align: left;
+    }
+    .rubrik-table th {
+      background-color: #17324d;
+      color: #ffffff;
+    }
+    .rubrik-table tr:nth-child(even) { background-color: #f8fafc; }
+    .btn-rubrik {
+      background-color: #17324d;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+    .sync-status { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; margin: 0 auto 1rem; max-width: 1600px; padding: .7rem 1rem; border-radius: 12px; font-size: .85rem; font-weight: 700; }
+    .sync-status.online { background: #dcfce7; color: #166534; }
+    .sync-status.offline { background: #fef3c7; color: #92400e; }
+    .sync-status button { border: 0; border-radius: 7px; padding: .45rem .7rem; background: var(--ink); color: #fff; font-weight: 700; }
+    @media (max-width: 640px) {
+      header > div { gap: .9rem; }
+      header nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: .4rem; }
+      header nav button { min-width: 0; padding: .65rem .35rem; font-size: .75rem; }
+    }
+    .app-shell:before {
+      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1;
+      background-image: linear-gradient(rgba(23, 50, 77, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(23, 50, 77, .035) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    .display-font { font-family: Georgia, serif; font-weight: 700; }
+    .top-rule { height: 8px; background: linear-gradient(90deg, var(--coral) 0 28%, var(--mustard) 28% 53%, var(--blue) 53% 100%); }
+    .glass { background: rgba(255, 250, 241, .9); border: 1px solid var(--line); box-shadow: 0 20px 55px rgba(23, 50, 77, .10); backdrop-filter: blur(9px); }
+    .page { animation: rise .35s ease both; }
+    #teacher-page > .grid > aside { display: block; order: 2; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; border: 0; border-radius: 14px; padding: .78rem 1rem; font-weight: 700; transition: .18s; }
+    .btn svg, .nav-btn svg { width: 1.1rem; height: 1.1rem; flex: none; stroke-width: 2.25; stroke: currentColor; fill: none; }
+    .btn span, .nav-btn span { line-height: 1.2; }
+    .btn:hover { transform: translateY(-2px); }
+    .nav-btn { min-height: 44px; padding: .65rem .9rem; border-radius: 12px; border: 0; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: .45rem; }
+    .nav-btn[aria-current="false"] { background: transparent !important; color: var(--ink) !important; }
+    .input { width: 100%; border: 1px solid rgba(23, 50, 77, .19); border-radius: 13px; padding: .78rem .9rem; background: #fff; color: var(--ink); }
+    .input:focus { outline: none; border-color: var(--coral); box-shadow: 0 0 0 4px rgba(232, 93, 74, .12); }
+    .label { display: block; margin-bottom: .42rem; font-size: .82rem; font-weight: 700; letter-spacing: .03em; }
+    .section-kicker { display: flex; align-items: center; gap: .65rem; margin-bottom: 1rem; }
+    .section-kicker:after { content: ""; height: 1px; background: var(--line); flex: 1; }
+    .guide-card { border-radius: 18px; padding: 1rem; border: 1px solid rgba(23, 50, 77, .11); background: rgba(255, 255, 255, .7); }
+    .guide-step { display: flex; gap: .8rem; align-items: flex-start; }
+    .guide-number { flex: none; width: 29px; height: 29px; border-radius: 50%; display: grid; place-items: center; background: var(--mustard); font-weight: 700; }
+    .rubric-card { padding: 1rem; border: 1px solid rgba(23, 50, 77, .12); border-radius: 16px; background: #fff; }
+    .record { width: 100%; text-align: left; border: 1px solid rgba(23, 50, 77, .12); background: #fff; border-radius: 17px; padding: 1rem; transition: .18s; }
+    .record:hover, .record.selected { border-color: var(--coral); box-shadow: 0 0 0 4px rgba(232, 93, 74, .1); }
+    .pill { display: inline-flex; border-radius: 999px; padding: .25rem .65rem; font-size: .74rem; font-weight: 700; }
+    .pill.pending { background: #fff1cf; color: #80570b; }
+    .pill.done { background: #dcefed; color: #155d58; }
+    .toast { position: fixed; right: 1rem; bottom: 1rem; z-index: 80; color: white; padding: .85rem 1rem; border-radius: 14px; box-shadow: 0 18px 40px rgba(23, 50, 77, .25); opacity: 0; transform: translateY(140%); transition: .25s; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .error { border: 1px solid #fecaca; background: #fef2f2; color: #b91c1c; border-radius: 12px; padding: .75rem 1rem; }
+    .self-score-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+    .self-score-card { border: 1px solid rgba(23, 50, 77, .1); border-radius: 12px; background: rgba(255, 255, 255, .82); padding: .8rem; }
+    .self-score-card strong { font-size: .82rem; }
+    .self-score-card p { font-size: .7rem; color: var(--muted); margin-top: .45rem; line-height: 1.35; }
+    .self-score-pill { background: var(--mustard); color: var(--ink); border-radius: 999px; padding: .25rem .55rem; font-size: .72rem; font-weight: 800; }
+    .self-result-icon { color: var(--mustard); font-size: 1.6rem; line-height: 1; }
+    .self-suggestion { border: 1px solid rgba(23, 50, 77, .1); border-radius: 12px; background: rgba(255, 255, 255, .72); padding: 1rem; }
+    .self-result-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .6rem; margin-top: .8rem; }
+    .self-submit-action { background: var(--coral); color: white; }
+    .self-retry-action { background: #eef1f2; color: var(--ink); }
+    .student-action-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; }
+    .self-assessment-panel { border: 1px solid rgba(23, 50, 77, .12); border-radius: 18px; background: #fff; padding: 1rem; }
+    .score-orbit { width: 148px; height: 148px; border-radius: 50%; display: grid; place-items: center; margin: auto; background: rgba(255, 255, 255, .18); }
+    .score-orbit.has-score { background: conic-gradient(var(--coral) var(--angle), rgba(255, 255, 255, .18) 0); }
+    .score-orbit > div { width: 122px; height: 122px; border-radius: 50%; background: var(--blue); display: grid; place-items: center; color: white; text-align: center; }
+    input[type=range] { width: 100%; accent-color: var(--coral); }
+    .report-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+    .report-table { width: 100%; min-width: 1120px; border-collapse: collapse; font-size: .78rem; }
+    .report-table th { background: var(--blue); color: #fff; padding: .75rem .65rem; text-align: left; white-space: nowrap; }
+    .report-table td { padding: .75rem .65rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .report-table tbody tr:last-child td { border-bottom: 0; }
+    .report-table tbody tr:hover { background: #fffaf1; }
+    .art-thumb { width: 62px; height: 52px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: #f8f4eb; }
+    .feedback-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; text-align: left; }
+    .student-result-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+    .student-result-table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: .8rem; }
+    .student-result-table th { background: var(--blue); color: #fff; padding: .7rem .6rem; text-align: left; white-space: nowrap; }
+    .student-result-table td { padding: .7rem .6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .student-result-table tbody tr:last-child td { border-bottom: 0; }
+    .analysis-page { display: flex; flex-direction: column; }
+    .analysis-page > .teacher-list { order: 2; }
+    .analysis-page > .performance-analysis { order: 3; }
+    .analysis-page > .analytics-grid { order: 4; }
+    .performance-analysis { background: rgba(255, 250, 241, .9); }
+    .performance-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .performance-card { border-radius: 16px; padding: 1rem; min-height: 96px; }
+    .performance-card.primary { background: var(--blue); color: white; }
+    .performance-card.accent { background: var(--coral); color: white; }
+    .performance-card.notice { background: #fff1cf; color: var(--ink); }
+    .aspect-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .8rem; }
+    .aspect-card { border: 1px solid rgba(23, 50, 77, .1); border-radius: 16px; background: #fff; padding: .85rem; }
+    .aspect-track { height: 8px; border-radius: 99px; background: #e1e7e6; overflow: hidden; margin-top: .75rem; }
+    .aspect-fill { height: 100%; border-radius: inherit; background: var(--coral); }
+    .review-status { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; }
+    .review-status-card { border: 1px solid rgba(23, 50, 77, .1); border-radius: 14px; background: #fff; padding: .85rem; }
+    .review-progress { height: 8px; border-radius: 99px; background: #e1e7e6; overflow: hidden; }
+    .review-progress > div { height: 100%; border-radius: inherit; background: #155d58; transition: width .2s ease; }
+    .notice-form { background: rgba(255, 250, 241, .9); }
+    .ai-assist { border: 1px solid rgba(22, 78, 99, .18); border-radius: 16px; background: #eef6f5; padding: 1rem; }
+    .teacher-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .teacher-filter { min-width: 0; }
+    .rubric-reference { width: 100%; min-width: 760px; border-collapse: collapse; font-size: .82rem; }
+    .rubric-reference th { background: var(--blue); color: #fff; padding: .8rem; text-align: left; }
+    .rubric-reference td { padding: .8rem; border-bottom: 1px solid var(--line); vertical-align: top; line-height: 1.45; }
+    .rubric-reference tbody tr:nth-child(even) { background: #f8f4eb; }
+    .access-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .access-link-card { display: grid; grid-template-columns: minmax(0, 1fr) 116px; gap: 1rem; align-items: center; }
+    .qr-code { width: 116px; height: 116px; padding: .35rem; border-radius: 10px; background: #fff; border: 1px solid var(--line); }
+    @media (max-width: 640px) { .access-links { grid-template-columns: 1fr; } .access-link-card { grid-template-columns: minmax(0, 1fr) 96px; } .qr-code { width: 96px; height: 96px; } }
+    .gallery-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .gallery-card { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
+    .gallery-image { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #f8f4eb; }
+    @media (max-width: 900px) { .gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 560px) { .gallery-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) { .performance-cards, .aspect-grid, .review-status { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 560px) { .performance-cards, .aspect-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 640px) { .student-action-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } .student-action-row #student-submit { grid-column: 1 / -1; } }
+    @media (max-width: 640px) { .feedback-links { grid-template-columns: 1fr; } }
+    @media (max-width: 720px) { .teacher-filters { grid-template-columns: 1fr; gap: .75rem; } }
+    @media print {
+      body.printing-student-results > * { display: none !important; }
+      body.printing-student-results #student-page { display: block !important; max-width: none !important; }
+      body.printing-student-results #student-page > *:not(.student-results-print) { display: none !important; }
+      body.printing-student-results .student-results-print { display: block !important; }
+      body.printing-student-results .result-print-action { display: none !important; }
+    }
+    @media print {
+      body { background: #fff !important; }
+      header, #home-page, #student-page, #survey-page, #teacher-page > .mb-6, #teacher-page > .notice-form, #teacher-page > .performance-analysis, #teacher-page > .teacher-list, #access-links-section { display: none !important; }
+      #teacher-page { display: block !important; max-width: none !important; }
+      #teacher-page .glass { box-shadow: none; border: 0; }
+      #teacher-page > .analytics-grid { display: block !important; margin: 0 !important; }
+      #report-section { display: block !important; }
+      .report-table-wrap { overflow: visible; }
+      .report-table { min-width: 0; font-size: 9px; }
+    }
+    @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  </style>
+</head>
+<body style="background: linear-gradient(135deg, rgb(247, 241, 231), rgb(237, 243, 239));">
+  <div class="orientation-notice" role="status" aria-live="polite"><div><span class="orientation-icon" aria-hidden="true"></span><strong>Putar peranti ke landskap</strong><p>Creative.Lense direka untuk paparan mendatar seperti skrin laptop.</p></div></div>
+  <div class="app-shell w-full">
+    <div class="top-rule"></div>
+    <header class="w-full px-4 sm:px-7 py-5">
+      <div class="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center gap-2">
+        <button id="brand-home" type="button" class="flex items-center gap-3 text-left">
+          <span class="grid place-items-center w-11 h-11 rounded-2xl" style="background: rgb(22, 78, 99); color: rgb(255, 255, 255);">
+            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.92 0 1.7-.77 1.7-1.7 0-.43-.16-.83-.45-1.13-.29-.3-.47-.7-.47-1.17 0-.93.77-1.7 1.7-1.7h2.23c3.43 0 6.22-2.8 6.22-6.23C22 5.6 17.5 2 12 2z"/></svg>
+          </span>
+          <span>
+            <span class="block font-bold uppercase tracking-[.16em] text-xs" style="color: rgb(232, 93, 74);">Studio Pentaksiran Seni</span>
+            <span class="display-font block text-xl leading-none" style="color: rgb(23, 50, 77);">Creative.Lense</span>
+          </span>
+        </button>
+        <div class="flex items-center gap-2 lg:order-3">
+          <label for="music-choice" class="sr-only">Pilih lagu</label>
+          <select id="music-choice" class="input !w-auto !shrink-0 !py-2 !px-3">
+            <option value="calm">Melodi Tenang</option>
+            <option value="bright">Irama Ceria</option>
+            <option value="dreamy">Alunan Kreatif</option>
+            <option value="piano">Arpeggio Menaik</option>
+            <option value="guitar">Corak Berulang</option>
+          </select>
+          <button id="music-toggle" class="nav-btn bg-[#f2b84b] text-[#17324d]" type="button" aria-pressed="false">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            <span data-template-id="music-off-text">Muzik</span>
+            <span data-template-id="music-on-text" class="hidden">Hentikan muzik</span>
+          </button>
+        </div>
+        <nav class="glass rounded-2xl p-1.5 flex flex-wrap justify-end gap-1 lg:order-2 lg:ml-auto">
+          <button id="nav-home" class="nav-btn" type="button" aria-current="page" style="background: rgb(242, 184, 75); color: rgb(23, 50, 77);">Utama</button>
+          <button id="nav-student" class="nav-btn" type="button" aria-current="false">Murid</button>
+          <button id="nav-teacher" class="nav-btn" type="button" aria-current="false">Guru</button>
+          <button id="nav-survey" class="nav-btn" type="button" aria-current="false">Maklum Balas</button>
+          <button id="nav-gallery" class="nav-btn" type="button" aria-current="false">Galeri Maya</button>
+        </nav>
+      </div>
+    </header>
+    <div id="sync-status" class="sync-status online" role="status" aria-live="polite">
+      <span id="sync-status-text">Status: Dalam talian</span>
+      <span id="sync-pending-count">Pending: 0</span>
+      <button id="sync-pending-btn" type="button" class="hidden">Hantar semula</button>
+    </div>
+
+    <main class="w-full px-4 sm:px-7 pb-12">
+      <!-- HALAMAN UTAMA -->
+      <section id="home-page" class="page max-w-7xl mx-auto">
+        <section class="glass rounded-[28px] overflow-hidden grid lg:grid-cols-[1.05fr_.95fr]">
+          <div class="p-7 sm:p-12 flex flex-col justify-center">
+            <p class="uppercase tracking-[.16em] font-bold mb-4" style="color: rgb(232, 93, 74);">Murid berkarya · Guru membimbing</p>
+            <h1 class="display-font leading-[1.02] text-4xl sm:text-5xl" style="color: rgb(23, 50, 77);">Smart Assessment, Better Art</h1>
+            <p class="max-w-xl mt-5 leading-relaxed text-[#62717f]">Platform kolaboratif offline untuk murid menghantar karya & refleksi serta guru menilai dan memberi maklum balas.</p>
+            <div class="grid sm:grid-cols-2 gap-3 mt-8">
+              <button id="home-student" class="btn" type="button" style="background: rgb(232, 93, 74); color: rgb(255, 255, 255);">Ruang Murid</button>
+              <button id="home-teacher" class="btn" type="button" style="background: rgb(238, 241, 242); color: rgb(23, 50, 77);">Ruang Guru</button>
+            </div>
+          </div>
+          <div class="relative min-h-[330px] bg-[#17324d] flex items-center justify-center p-6 text-white text-center">
+            <div>
+              <svg class="mx-auto mb-4" viewBox="0 0 24 24" width="64" height="64" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.92 0 1.7-.77 1.7-1.7 0-.43-.16-.83-.45-1.13-.29-.3-.47-.7-.47-1.17 0-.93.77-1.7 1.7-1.7h2.23c3.43 0 6.22-2.8 6.22-6.23C22 5.6 17.5 2 12 2z"/></svg>
+              <p class="font-semibold text-lg">Mod Offline Berfungsi</p>
+              <p class="text-sm mt-2 text-gray-300">Semua data disimpan secara selamat dalam peranti anda tanpa memerlukan talian internet.</p>
+            </div>
+          </div>
+        </section>
+        <section class="glass rounded-[26px] mt-6 p-5 sm:p-6">
+          <p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(232, 93, 74);">Makluman Guru</p>
+          <h2 class="display-font mt-2 text-2xl" style="color: rgb(23, 50, 77);">Status Semakan Keputusan</h2>
+          <p id="home-notice-message" class="mt-2 text-[#62717f]">Keputusan penilaian boleh disemak melalui laman murid.</p>
+        </section>
+      </section>
+
+      <!-- HALAMAN MURID -->
+      <section id="student-page" class="page hidden max-w-7xl mx-auto">
+        <div class="mb-6">
+          <p class="uppercase tracking-[.16em] font-bold mb-2" style="color: rgb(232, 93, 74);">Laman Murid</p>
+          <h1 class="display-font text-3xl sm:text-4xl" style="color: rgb(23, 50, 77);">Hantar karya anda</h1>
+        </div>
+        <section class="guide-card mb-6" aria-labelledby="student-guide-title">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+              <h2 id="student-guide-title" class="font-bold text-lg">Panduan Penggunaan Murid</h2>
+              <div class="grid sm:grid-cols-3 gap-4 mt-3 text-sm">
+                <div class="guide-step"><span class="guide-number">1</span><span>Lengkapkan maklumat diri dan sekolah.</span></div>
+                <div class="guide-step"><span class="guide-number">2</span><span>Isi maklumat karya dan pilih gambar.</span></div>
+                <div class="guide-step"><span class="guide-number">3</span><span>Tekan hantar, kemudian semak keputusan.</span></div>
+              </div>
+            </div>
+            <button id="student-rubric-btn" class="btn shrink-0" type="button" style="background: rgb(242, 184, 75); color: rgb(23, 50, 77);">Lihat Rubrik &amp; Panduan TP PSV</button>
+          </div>
+        </section>
+        <div class="grid grid-cols-1 gap-6 items-start">
+          <section class="glass rounded-[26px] p-5 sm:p-7">
+            <section class="guide-card mb-6" aria-labelledby="ocr-title">
+              <p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(22, 93, 83);">Pilihan tambahan</p>
+              <h2 id="ocr-title" class="display-font text-2xl mt-1" style="color: rgb(23, 50, 77);">Imbas kad maklumat</h2>
+              <p class="text-sm text-gray-500 mt-2">Muat naik gambar kad tulisan tangan untuk mengisi beberapa medan secara automatik. Semak dan betulkan maklumat sebelum menghantar.</p>
+              <label class="label mt-4" for="inputGambarKad">Gambar kad maklumat</label>
+              <input id="inputGambarKad" class="input" type="file" accept="image/*">
+              <p id="statusOCR" class="text-sm mt-2" aria-live="polite"></p>
+            </section>
+            <form id="student-form">
+              <div class="grid lg:grid-cols-2 gap-7">
+                <div>
+                  <h2 class="font-bold text-lg mb-4" style="color: rgb(23, 50, 77);">01. Maklumat Pelajar</h2>
+                  <div class="space-y-4">
+                    <div>
+                      <label class="label" for="student-name">Nama Murid *</label>
+                      <input id="student-name" class="input" required placeholder="Contoh: Nur Aisyah">
+                    </div>
+                    <div class="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label class="label" for="student-year">Tahun *</label>
+                        <select id="student-year" class="input" required>
+                          <option value="">Pilih tahun</option>
+                          <option>Tahun 4</option><option>Tahun 5</option><option>Tahun 6</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="label" for="student-class">Kelas *</label>
+                        <input id="student-class" class="input" required placeholder="Contoh: 2 Bestari">
+                      </div>
+                    </div>
+                    <div>
+                      <label class="label" for="student-school">Sekolah *</label>
+                      <input id="student-school" class="input" required placeholder="Contoh: SK Penampang">
+                    </div>
+                    <div>
+                      <label class="label" for="student-teacher">Nama Cikgu *</label>
+                      <input id="student-teacher" class="input" required placeholder="Contoh: En. Abu">
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h2 class="font-bold text-lg mb-4" style="color: rgb(23, 50, 77);">02. Maklumat Karya</h2>
+                  <div class="space-y-4">
+                    <div class="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label class="label" for="art-type">Jenis Karya *</label>
+                        <input id="art-type" class="input" required placeholder="Contoh: Lukisan">
+                      </div>
+                      <div>
+                        <label class="label" for="art-name">Tajuk Karya *</label>
+                        <input id="art-name" class="input" required placeholder="Contoh: Irama Hutan">
+                      </div>
+                    </div>
+                    <div class="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label class="label" for="art-media">Media *</label>
+                        <input id="art-media" class="input" name="media" required placeholder="Contoh: Cat air">
+                      </div>
+                      <div>
+                        <label class="label" for="art-materials">Bahan *</label>
+                        <input id="art-materials" class="input" name="materials" required placeholder="Contoh: Kertas lukisan dan berus">
+                      </div>
+                    </div>
+                    <div>
+                      <label class="label" for="art-technique">Teknik *</label>
+                      <input id="art-technique" class="input" name="technique" required placeholder="Contoh: Capan, tiupan atau gosokan">
+                    </div>
+                    <div class="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label class="label" for="art-elements">Unsur Seni *</label>
+                        <input id="art-elements" class="input" name="elements" required placeholder="Contoh: Garisan, rupa, warna dan jalinan">
+                      </div>
+                      <div>
+                        <label class="label" for="art-principles">Prinsip Rekaan *</label>
+                        <input id="art-principles" class="input" name="principles" required placeholder="Contoh: Imbangan, harmoni dan kontra">
+                      </div>
+                    </div>
+                    <div>
+                      <label class="label" for="art-image">Gambar Karya *</label>
+                      <input id="art-image" class="input" type="file" accept="image/*" required>
+                    </div>
+                    <div>
+                      <label class="label" for="reflection">Apresiasi Kendiri *</label>
+                      <textarea id="reflection" class="input min-h-[118px]" required placeholder="Terangkan idea, penggunaan warna dan proses menghasilkan karya ini..."></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div id="student-error" class="error hidden mt-5"></div>
+              <div class="student-action-row mt-6">
+                <button id="self-assessment-btn" class="btn" type="button" style="background: rgb(242, 184, 75); color: rgb(23, 50, 77);">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3ZM19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16Z"/></svg>
+                  <span>Penilaian Kendiri</span>
+                </button>
+                <button id="clear-student-form" class="btn" type="button" style="background: rgb(232, 93, 74); color: white;">Kosongkan</button>
+                <button id="student-submit" class="btn" type="submit" style="background: rgb(232, 93, 74); color: rgb(255, 255, 255);">Hantar kepada Guru</button>
+              </div>
+              <div id="self-assessment-panel" class="self-assessment-panel hidden mt-5" aria-live="polite">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div><p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(232, 93, 74);">Keputusan Penilaian Kendiri</p><h3 id="self-score-title" class="display-font text-2xl mt-1">-</h3></div>
+                  <span id="self-score-badge" class="self-score-pill">-</span>
+                </div>
+                <div id="self-score-details" class="self-score-grid mt-4"></div>
+                <div class="self-suggestion mt-4"><strong>Cadangan penambahbaikan AI</strong><p id="self-suggestion-text" class="text-sm text-gray-600 mt-2"></p></div>
+              </div>
+            </form>
+          </section>
+
+          <!-- SEMAK KEPUTUSAN -->
+          <aside class="space-y-6">
+            <section class="glass rounded-[26px] p-5">
+              <h2 class="display-font text-2xl" style="color: rgb(23, 50, 77);">Semak Keputusan</h2>
+              <form id="result-form" class="space-y-3 mt-4">
+                <div>
+                  <label class="label" for="result-name">Nama Murid</label>
+                  <input id="result-name" class="input" required placeholder="Nama penuh">
+                </div>
+                <div>
+                  <label class="label" for="result-school">Sekolah</label>
+                  <input id="result-school" class="input" required placeholder="Nama sekolah">
+                </div>
+                <button type="submit" class="btn w-full" style="background: rgb(22, 78, 99); color: white;">Semak Keputusan</button>
+              </form>
+              <div id="result-message" class="hidden mt-4"></div>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <!-- HALAMAN GURU -->
+      <section id="teacher-page" class="page hidden analysis-page max-w-[1500px] mx-auto">
+        <div class="mb-6 flex justify-between items-center">
+          <div>
+            <p class="uppercase tracking-[.16em] font-bold text-xs mb-2" style="color: rgb(232, 93, 74);">Laman Guru</p>
+            <h1 class="display-font text-3xl" style="color: rgb(23, 50, 77);">Ruang Pentaksiran Guru</h1>
+          </div>
+          <span id="record-count" class="font-bold text-sm bg-white px-3 py-1 rounded-full border">0 Karya</span>
+        </div>
+        <section class="guide-card teacher-guide mb-6" aria-labelledby="teacher-guide-title">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+              <h2 id="teacher-guide-title" class="font-bold text-lg">Panduan Penggunaan Guru</h2>
+              <div class="grid sm:grid-cols-3 gap-4 mt-3 text-sm">
+                <div class="guide-step"><span class="guide-number">1</span><span>Pilih karya murid daripada senarai.</span></div>
+                <div class="guide-step"><span class="guide-number">2</span><span>Semak gambar, refleksi dan beri skor rubrik.</span></div>
+                <div class="guide-step"><span class="guide-number">3</span><span>Simpan penilaian untuk dikongsi kepada murid.</span></div>
+              </div>
+            </div>
+            <button id="teacher-rubric-btn" class="btn shrink-0" type="button" style="background: rgb(242, 184, 75); color: rgb(23, 50, 77);">Lihat Rubrik</button>
+          </div>
+        </section>
+        <section class="notice-form rounded-[26px] p-5 sm:p-6 mb-6" aria-labelledby="teacher-notice-title">
+          <p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(232, 93, 74);">Makluman untuk Murid</p>
+          <h2 id="teacher-notice-title" class="display-font text-3xl sm:text-4xl mt-2" style="color: rgb(23, 50, 77);">Tulis notis laman utama</h2>
+          <form id="notice-form" class="mt-5">
+            <label class="label" for="teacher-notice">Notis</label>
+            <textarea id="teacher-notice" class="input min-h-[110px]" placeholder="Contoh: Keputusan boleh disemak sekarang."></textarea>
+            <button id="save-notice" class="btn w-full mt-4" type="submit" style="background: rgb(232, 93, 74); color: white;">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 18-8-8 18-2-8-8-2Z"/><path d="m11 13 4-4"/></svg>
+              <span>Simpan Notis</span>
+            </button>
+          </form>
+        </section>
+        <section class="glass rounded-[26px] p-5 sm:p-6 mb-6" aria-label="Tapis senarai karya">
+          <div class="teacher-filters">
+            <div class="teacher-filter"><label class="label" for="filter-year">Tahun</label><select id="filter-year" class="input"><option value="">Semua tahun</option><option>Tahun 4</option><option>Tahun 5</option><option>Tahun 6</option></select></div>
+            <div class="teacher-filter"><label class="label" for="filter-class">Kelas</label><input id="filter-class" class="input" placeholder="Contoh: 2 Bestari"></div>
+            <div class="teacher-filter"><label class="label" for="filter-student">Murid</label><select id="filter-student" class="input"><option value="">Semua murid</option></select></div>
+            <div class="teacher-filter"><label class="label" for="filter-status">Status karya</label><select id="filter-status" class="input"><option value="">Semua status</option><option value="Dihantar">Belum dinilai</option><option value="Dinilai">Sudah dinilai</option></select></div>
+          </div>
+        </section>
+        <section class="performance-analysis rounded-[26px] p-5 sm:p-6 mb-6" aria-label="Analisis prestasi murid">
+          <p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(232, 93, 74);">Analisis Prestasi Murid</p>
+          <h2 class="display-font text-3xl sm:text-4xl mt-2" style="color: rgb(23, 50, 77);">Prestasi hasil karya mengikut aspek</h2>
+          <p class="text-sm text-gray-500 mt-2 mb-5">Analisis ini menggunakan semua karya yang telah dinilai berdasarkan penapis sekolah dan kelas semasa.</p>
+          <div class="performance-cards mb-4">
+            <div class="performance-card primary"><p class="text-sm">Karya dinilai</p><p id="stat-assessed" class="display-font text-3xl mt-1">0</p></div>
+            <div class="performance-card accent"><p class="text-sm">Purata markah</p><p id="stat-average" class="display-font text-3xl mt-1">-</p></div>
+            <div class="performance-card notice"><p class="text-sm">Keperluan tindakan</p><p id="stat-action" class="display-font text-2xl mt-2">Menunggu penilaian</p></div>
+          </div>
+          <div class="guide-card mb-4">
+            <h3 class="font-bold text-lg mb-3">Status Semakan</h3>
+            <div class="review-status">
+              <div class="review-status-card"><p class="text-xs text-gray-500">Menunggu semakan</p><p id="review-pending" class="display-font text-2xl mt-1 text-[#80570b]">0</p></div>
+              <div class="review-status-card"><p class="text-xs text-gray-500">Telah dinilai</p><p id="review-assessed" class="display-font text-2xl mt-1 text-[#155d58]">0</p></div>
+              <div class="review-status-card"><p class="text-xs text-gray-500">Kemajuan semakan</p><p id="review-progress-label" class="display-font text-2xl mt-1">0%</p><div class="review-progress mt-2"><div id="review-progress-bar" style="width: 0%"></div></div></div>
+            </div>
+          </div>
+          <div id="aspect-analysis" class="aspect-grid"></div>
+          <div id="analysis-message" class="mt-5 rounded-2xl bg-[#f2efe8] px-5 py-4 text-sm text-gray-500">Analisis akan dipaparkan selepas sekurang-kurangnya satu karya dinilai.</div>
+        </section>
+        <div class="teacher-list grid xl:grid-cols-[350px_minmax(0,1fr)] gap-6 items-start mb-6">
+          <section class="glass rounded-[26px] p-5">
+            <h2 class="display-font text-xl mb-4" style="color: rgb(23, 50, 77);">Senarai Karya</h2>
+            <div id="record-list" class="space-y-3 max-h-[600px] overflow-y-auto"></div>
+          </section>
+          <section class="glass rounded-[26px] p-6">
+            <div id="assessment-empty" class="text-center py-12">
+              <p class="text-gray-500">Sila pilih karya di sebelah kiri untuk mula menilai.</p>
+            </div>
+            <form id="assessment-form" class="hidden space-y-6">
+              <div>
+                <h2 id="selected-title" class="display-font text-2xl"></h2>
+                <p id="selected-meta" class="text-sm text-gray-500 mt-1"></p>
+                <div class="bg-white/60 p-4 rounded-xl mt-3 border">
+                  <strong>Refleksi Murid:</strong>
+                  <p id="selected-reflection" class="text-sm mt-1 text-gray-700"></p>
+                </div>
+                <div id="selected-art-details" class="text-sm text-gray-700"></div>
+                <img id="selected-image" class="hidden w-full max-h-[420px] object-contain rounded-xl border bg-white" alt="Gambar karya murid">
+              </div>
+              <div id="rubric-list" class="grid md:grid-cols-2 gap-4"></div>
+              <div class="guide-card grid sm:grid-cols-2 gap-4" aria-live="polite">
+                <div><span class="text-sm text-gray-500">Jumlah markah</span><strong id="teacher-total-score" class="display-font text-2xl block">60</strong></div>
+                <div><span class="text-sm text-gray-500">Tahap Penguasaan</span><strong id="teacher-tp-score" class="display-font text-2xl block">TP6</strong></div>
+              </div>
+              <div class="ai-assist">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <strong>Bantuan Analisis AI</strong>
+                    <p id="ai-status" class="text-sm text-gray-600 mt-1">Semak sambungan untuk mengaktifkan cadangan AI.</p>
+                  </div>
+                  <button id="ai-assist-btn" class="btn shrink-0" type="button" style="background: rgb(22, 78, 99); color: white;" disabled>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3ZM19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16Z"/></svg>
+                    <span>Analisis dengan AI</span>
+                  </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-3">Cadangan AI mengisi markah, ulasan dan aktiviti susulan. Guru masih boleh menyemak dan mengubahnya sebelum menyimpan.</p>
+              </div>
+              <div>
+                <label class="label" for="teacher-review">Ulasan Guru *</label>
+                <textarea id="teacher-review" class="input min-h-[90px]" required placeholder="Masukkan ulasan pembinaan..."></textarea>
+              </div>
+              <div>
+                <label class="label" for="followup">Aktiviti Susulan</label>
+                <textarea id="followup" class="input min-h-[70px]" placeholder="Cadangan aktiviti penambahbaikan..."></textarea>
+              </div>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <button type="submit" class="btn w-full" style="background: rgb(232, 93, 74); color: white;">Simpan Penilaian</button>
+                <button id="delete-record" type="button" class="btn w-full" style="background: #eef1f2; color: #a83224;">Padam Rekod</button>
+              </div>
+            </form>
+          </section>
+        </div>
+        <div id="analytics-grid" class="analytics-grid mb-6">
+          <section id="report-section" class="glass rounded-[26px] p-5 xl:col-span-2">
+            <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+              <div>
+                <p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(232, 93, 74);">Laporan Keseluruhan</p>
+                <h2 class="display-font text-3xl mt-2" style="color: rgb(23, 50, 77);">Lihat semua rekod karya</h2>
+                <p id="report-summary" class="text-sm text-gray-500 mt-2"></p>
+              </div>
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+                <div class="grid sm:grid-cols-2 gap-3">
+                  <div><label class="label" for="report-year">Tahun laporan</label><select id="report-year" class="input"><option value="">Semua tahun</option><option>Tahun 4</option><option>Tahun 5</option><option>Tahun 6</option></select></div>
+                  <div><label class="label" for="report-class">Kelas laporan</label><input id="report-class" class="input" placeholder="Contoh: 4 Bestari"></div>
+                </div>
+              <button id="print-report" class="btn shrink-0" type="button" style="background: rgb(232, 93, 74); color: white;">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z"/><path d="M18 12h.01"/></svg>
+                <span>Cetak / Simpan Laporan</span>
+              </button>
+              </div>
+            </div>
+            <div class="report-table-wrap mt-6">
+              <table class="report-table">
+                <thead><tr><th>Bil.</th><th>Murid</th><th>Tahun / Kelas</th><th>Gambar</th><th>Tajuk karya</th><th>Jenis</th><th>Markah</th><th>Tahap</th><th>Ulasan untuk murid</th><th>Aktiviti susulan</th><th>Tarikh nilai</th></tr></thead>
+                <tbody id="report-table-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- HALAMAN MAKLUM BALAS -->
+      <section id="survey-page" class="page hidden max-w-5xl mx-auto text-center">
+        <h1 class="display-font text-3xl mb-4" style="color: rgb(23, 50, 77);">Maklum Balas</h1>
+        <p class="text-gray-600">Kongsikan pengalaman anda untuk membantu menambah baik aplikasi ini.</p>
+        <div class="access-links mt-6">
+          <div class="guide-card access-link-card text-left"><div><strong>Maklum Balas Guru</strong><a class="block text-sm text-gray-500 mt-2" href="https://forms.gle/JWqbHaoazFbKHGW26" target="_blank" rel="noopener">Buka borang guru</a></div><img class="qr-code feedback-qr" data-url="https://forms.gle/JWqbHaoazFbKHGW26" alt="Kod QR borang maklum balas guru"></div>
+          <div class="guide-card access-link-card text-left"><div><strong>Maklum Balas Murid</strong><a class="block text-sm text-gray-500 mt-2" href="https://forms.gle/1AcNJ6UNseTyhJRT9" target="_blank" rel="noopener">Buka borang murid</a></div><img class="qr-code feedback-qr" data-url="https://forms.gle/1AcNJ6UNseTyhJRT9" alt="Kod QR borang maklum balas murid"></div>
+        </div>
+      </section>
+      <!-- HALAMAN GALERI MAYA -->
+      <section id="gallery-page" class="page hidden max-w-5xl mx-auto text-center">
+        <p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(232, 93, 74);">Ruang pameran</p>
+        <h1 id="gallery-title" class="display-font text-3xl mt-2" style="color: rgb(23, 50, 77);">Galeri Maya Murid</h1>
+        <div id="gallery-grid" class="gallery-grid mt-6 text-left"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <div id="rubric-modal" class="modal-rubrik hidden" role="dialog" aria-modal="true" aria-labelledby="rubrik-modal-title">
+    <section class="modal-content-rubrik">
+      <div class="flex items-center justify-between gap-4">
+        <h2 id="rubrik-modal-title" class="display-font text-2xl" style="color:#17324d; margin-top:0;">Rubrik Pentaksiran Karya PSV (Jumlah: 100 Markah)</h2>
+        <button id="close-rubric" class="close-rubrik" type="button" aria-label="Tutup rubrik">&times;</button>
+      </div>
+      <p style="font-size:.85rem; color:#64748b;">Penilaian Visual Perception dan Art Application hendaklah dibuat berdasarkan gambar karya bagi mengenal pasti Unsur Seni, Prinsip Rekaan serta penguasaan Media dan Teknik.</p>
+      <div class="rubrik-scroll">
+        <table class="rubrik-table">
+          <thead><tr><th>Kriteria Pentaksiran (Markah Penuh)</th><th>Cemerlang (Excellent)</th><th>Memuaskan (Average)</th><th>Lemah (Weak)</th></tr></thead>
+          <tbody id="rubric-modal-list">
+            <tr><td><strong>Persepsi Visual (20M)</strong><br><small>Unsur Seni dan Prinsip Rekaan</small></td><td><strong>16 - 20 M</strong><br>Bahasa seni visual dijelaskan dan diaplikasikan dengan sangat tepat pada visual karya.</td><td><strong>8 - 15 M</strong><br>Bahasa seni visual difahami, namun penerangan dan aplikasi masih terhad.</td><td><strong>1 - 7 M</strong><br>Bahasa seni visual tidak dinyatakan atau diaplikasikan secara tidak tepat.</td></tr>
+            <tr><td><strong>Aplikasi Seni (25M)</strong><br><small>Media, Bahan dan Teknik</small></td><td><strong>18 - 25 M</strong><br>Media dan teknik dikuasai serta diaplikasikan dengan kemas dan mantap.</td><td><strong>9 - 17 M</strong><br>Penggunaan media atau teknik belum konsisten.</td><td><strong>1 - 8 M</strong><br>Penguasaan teknik lemah atau media tidak sesuai.</td></tr>
+            <tr><td><strong>Ekspresi Kreatif (30M)</strong><br><small>Pengolahan Idea dan Komposisi</small></td><td><strong>21 - 30 M</strong><br>Idea sangat asli, kreatif dan bertepatan dengan tema.</td><td><strong>11 - 20 M</strong><br>Idea agak biasa namun masih bersesuaian dengan tema.</td><td><strong>1 - 10 M</strong><br>Komposisi tidak jelas, kurang teratur dan tidak menjawab tema.</td></tr>
+            <tr><td><strong>Apresiasi Seni (15M)</strong><br><small>Refleksi dan Ulasan Kendiri</small></td><td><strong>11 - 15 M</strong><br>Menerangkan karya sendiri dengan yakin menggunakan Bahasa Seni Visual.</td><td><strong>6 - 10 M</strong><br>Boleh menerangkan karya tetapi penerangan terhad.</td><td><strong>1 - 5 M</strong><br>Tidak mampu menerangkan atau membuat apresiasi karya.</td></tr>
+            <tr><td><strong>Sikap dan Sahsiah (10M)</strong><br><small>Kekemasan dan Komitmen</small></td><td><strong>8 - 10 M</strong><br>Karya siap, sangat kemas, bersih dan komitmen tinggi.</td><td><strong>4 - 7 M</strong><br>Karya siap tetapi kurang dari segi kekemasan.</td><td><strong>1 - 3 M</strong><br>Karya tidak siap sepenuhnya dan kurang usaha.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h4 style="color:#17324d; margin-top:20px; margin-bottom:8px;">Jadual Penentuan Tahap Penguasaan (TP)</h4>
+      <div class="rubrik-scroll">
+        <table class="rubrik-table">
+          <thead><tr><th>Tahap Penguasaan (TP)</th><th>Julat Skor (100M)</th><th>Tafsiran Pentaksiran</th></tr></thead>
+          <tbody>
+            <tr><td><strong>TP 1</strong></td><td>1 - 20</td><td><strong>Sangat Terhad</strong> - Memerlukan bimbingan asas menyeluruh.</td></tr>
+            <tr><td><strong>TP 2</strong></td><td>21 - 40</td><td><strong>Terhad</strong> - Memahami bahasa seni visual dan teknik asas minimum.</td></tr>
+            <tr><td><strong>TP 3</strong></td><td>41 - 60</td><td><strong>Memuaskan</strong> - Menghasilkan komposisi asas mengikut tema.</td></tr>
+            <tr><td><strong>TP 4</strong></td><td>61 - 75</td><td><strong>Baik</strong> - Karya kemas dengan aplikasi teknik yang betul.</td></tr>
+            <tr><td><strong>TP 5</strong></td><td>76 - 90</td><td><strong>Sangat Baik</strong> - Kreatif, ekspresif dan penggunaan media konsisten.</td></tr>
+            <tr><td><strong>TP 6</strong></td><td>91 - 100</td><td><strong>Cemerlang</strong> - Kreatif, asli, kemas dan yakin membuat apresiasi.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  <div id="teacher-access-modal" class="hidden fixed inset-0 z-[95] bg-[#17324d]/50 p-4 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="teacher-access-title">
+    <section class="glass rounded-[26px] w-full max-w-md p-6">
+      <p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(232, 93, 74);">Akses Guru</p>
+      <h2 id="teacher-access-title" class="display-font text-3xl mt-2" style="color: rgb(23, 50, 77);">Masukkan kod akses</h2>
+      <p class="text-sm text-gray-500 mt-2">Kod ini diperlukan untuk melihat maklumat dan penilaian murid.</p>
+      <form id="teacher-access-form" class="mt-5">
+        <label class="label" for="teacher-access-code">Kod akses guru</label>
+        <input id="teacher-access-code" class="input" type="password" autocomplete="off" placeholder="Masukkan kod akses" required>
+        <p id="teacher-access-error" class="error hidden mt-3">Kod akses tidak tepat.</p>
+        <div class="flex justify-end gap-2 mt-5"><button id="cancel-teacher-access" class="nav-btn" type="button">Batal</button><button class="btn" type="submit" style="background: rgb(232, 93, 74); color: white;">Buka Laman Guru</button></div>
+      </form>
+    </section>
+  </div>
+
+  <!-- KOD JAVASCRIPT LOGIK OFFLINE -->
+  <script>
+    const $ = id => document.getElementById(id);
+    const pages = { home: $("home-page"), student: $("student-page"), teacher: $("teacher-page"), survey: $("survey-page"), gallery: $("gallery-page") };
+    const nav = { home: $("nav-home"), student: $("nav-student"), teacher: $("nav-teacher"), survey: $("nav-survey"), gallery: $("nav-gallery") };
+
+    // PERKHIDMATAN DATA LOCALSTORAGE (OFFLINE STORAGE)
+    const DB_KEY = "artsense_offline_records";
+    const PENDING_KEY = "pending_rekod_karya";
+    const NOTICE_KEY = "artsense_offline_notice";
+    const SYNC_API_URL = "";
+    const FIRESTORE_COLLECTION = "rekod_karya";
+    const TEACHER_ACCESS_CODE = "GURU EDUTECH";
+    const artworkChoices = {
+      Lukisan: {
+        media: ["Pensel (H/B/2B-6B)", "Pensel warna", "Arang (Charcoal)", "Pen penanda (Marker)", "Pastel kapur / minyak"],
+        materials: ["Kertas lukisan", "Kertas lukisan GSM tinggi", "Pemadam dan pembaris"],
+        techniques: ["Lorekan silang", "Titikan", "Garisan selari", "Lorekan gosokan"]
+      },
+      Catan: {
+        media: ["Cat air", "Warna poster", "Cat akrilik"],
+        materials: ["Kertas khas cat air", "Kanvas", "Palet dan berus", "Bekas air"],
+        techniques: ["Basah atas basah", "Basah atas kering", "Kering atas basah", "Kering atas kering"]
+      },
+      Gosokan: { media: ["Pensel warna", "Krayon", "Pastel minyak", "Pensel 2B/4B"], materials: ["Kertas lukisan nipis", "Objek bertekstur seperti daun, syiling atau kayu"], techniques: ["Gosokan jalinan tampak", "Gosokan jalinan sentuh berlapis"] },
+      Capan: { media: ["Warna poster", "Cat akrilik"], materials: ["Acuan semula jadi seperti bendi, kentang atau pelepah pisang", "Acuan buatan seperti penutup botol atau span", "Kertas lukisan"], techniques: ["Capan selang-seli", "Capan bertindih", "Capan ulangan rupa"] },
+      Cetakan: { media: ["Warna poster", "Dakwat cetakan"], materials: ["Blok kadbod", "Blok pemadam atau ubi kentang", "Penggelek cetakan", "Kertas lukisan"], techniques: ["Cetakan timbulan", "Cetakan kolagrafi", "Cetakan blok mudah"] },
+      Kolaj: { media: ["Gam cecair / gam stik"], materials: ["Kertas warna", "Kertas majalah / surat khabar", "Kain fabrik / reben", "Kertas lukisan"], techniques: ["Tampalan bertindih", "Guntingan rupa geometri / organik", "Koyakan"] },
+      Montaj: { media: ["Gam stik / cecair"], materials: ["Gambar cetakan majalah / surat khabar", "Gambar foto / cetakan digital", "Kertas lukisan"], techniques: ["Potongan dan gantian rupa", "Tindihan gambar", "Susunan tematik"] },
+      Mozek: { media: ["Gam stik / cecair"], materials: ["Potongan kertas warna", "Jubin kecil / plastik foam", "Kertas lukisan"], techniques: ["Susunan bersebelahan", "Susunan kelegaan garisan nat"] },
+      Resis: { media: ["Krayon / pastel minyak", "Lilin", "Cat air / warna poster"], materials: ["Kertas lukisan", "Berus dan palet"], techniques: ["Penolakan warna berasaskan air oleh minyak / lilin"] },
+      Stensilan: { media: ["Warna poster", "Cat akrilik"], materials: ["Kadbod / plastik lutsinar", "Span / berus", "Kertas lukisan"], techniques: ["Topangan span", "Stensilan rupa positif / negatif"] },
+      Percikan: { media: ["Warna poster", "Cat air"], materials: ["Berus gigi lama dan sikat", "Berus lukisan", "Kertas lukisan"], techniques: ["Renjisan berus", "Geseran berus gigi pada sikat"] },
+      Tiupan: { media: ["Warna poster cair", "Cat air"], materials: ["Penyedut minuman", "Kertas lukisan"], techniques: ["Tiupan straw arah pelbagai"] },
+      Gurisan: { media: ["Krayon pelbagai warna + krayon hitam"], materials: ["Alat pencungkil gigi atau garpu", "Kertas lukisan tebal"], techniques: ["Gurisan lapisan warna atas"] },
+      Arca: { media: ["Tanah liat", "Plastisin"], materials: ["Alas kerja", "Alat membentuk"], techniques: ["Bentukan", "Picitan", "Cantuman"] },
+      Kraf: { media: ["Kertas warna", "Kain", "Bahan kitar semula"], materials: ["Gunting", "Gam", "Bahan hiasan"], techniques: ["Guntingan", "Lipat dan cantum", "Hiasan"] }
+    };
+
+    function getRecords() {
+      try { return JSON.parse(localStorage.getItem(DB_KEY)) || []; }
+      catch(e) { return []; }
+    }
+    function saveRecords(data) {
+      localStorage.setItem(DB_KEY, JSON.stringify(data));
+    }
+
+    function getPendingRecords() {
+      try {
+        const current = JSON.parse(localStorage.getItem(PENDING_KEY) || "[]");
+        const legacy = JSON.parse(localStorage.getItem("karya_pending") || "[]");
+        const merged = new Map([...current, ...legacy].map(record => [String(record.id), record]));
+        return [...merged.values()];
+      }
+      catch(error) { return []; }
+    }
+
+    function queuePendingRecord(record) {
+      const pending = getPendingRecords().filter(item => String(item.id) !== String(record.id));
+      pending.push(record);
+      localStorage.setItem(PENDING_KEY, JSON.stringify(pending));
+      updateSyncStatus();
+    }
+
+    function removePendingRecord(id) {
+      const pending = getPendingRecords().filter(record => String(record.id) !== String(id));
+      localStorage.setItem(PENDING_KEY, JSON.stringify(pending));
+      updateSyncStatus();
+    }
+
+    function updateSyncStatus() {
+      kemaskiniStatusPendingUI();
+    }
+
+    function kemaskiniStatusPendingUI() {
+      const status = $("sync-status");
+      const pending = getPendingRecords();
+      const statusText = $("sync-status-text") || $("teks_status");
+      const pendingText = $("sync-pending-count") || $("teks_pending");
+      const resendButton = $("sync-pending-btn") || $("btn_hantar_semula");
+      if(statusText) {
+        statusText.textContent = navigator.onLine ? "Status: Dalam talian" : "Status: Luar talian";
+        statusText.style.color = navigator.onLine ? "#166534" : "#991b1b";
+      }
+      if(pendingText) pendingText.textContent = `Pending: ${pending.length}`;
+      if(status) {
+        status.classList.toggle("online", navigator.onLine);
+        status.classList.toggle("offline", !navigator.onLine);
+      }
+      if(resendButton) {
+        resendButton.classList.toggle("hidden", navigator.onLine ? !pending.length : false);
+        resendButton.style.display = navigator.onLine && pending.length ? "inline-block" : "none";
+      }
+    }
+
+    function simpanKePendingStorage(dataKarya) {
+      queuePendingRecord(dataKarya);
+      alert("Tiada sambungan internet. Karya disimpan sementara dalam peranti (Pending). Sila tekan 'Hantar semula' apabila ada internet.");
+      kemaskiniStatusPendingUI();
+    }
+
+    async function hantarKeFirebaseDirect(dataKarya) {
+      const berjaya = await saveCloudRecord(dataKarya);
+      if(!berjaya) throw new Error("Karya belum dapat dihantar ke Firebase.");
+      removePendingRecord(dataKarya.id);
+      return true;
+    }
+
+    async function hantarKaryaMurid(dataKarya) {
+      if(navigator.onLine) {
+        try { return await hantarKeFirebaseDirect(dataKarya); }
+        catch(error) { queuePendingRecord(dataKarya); return false; }
+      }
+      simpanKePendingStorage(dataKarya);
+      return false;
+    }
+
+    async function syncPendingRecords() {
+      await hantarSemulaDataPending();
+    }
+
+    async function hantarSemulaDataPending() {
+      if(!navigator.onLine) {
+        alert("Peranti masih luar talian. Sila sambungkan internet terlebih dahulu.");
+        return;
+      }
+      const pending = getPendingRecords();
+      if(!pending.length) return;
+      for(const record of pending) {
+        try { await hantarKeFirebaseDirect(record); }
+        catch(error) {
+          kemaskiniStatusPendingUI();
+          alert("Ralat semasa hantar semula: " + error.message);
+          return;
+        }
+      }
+      localStorage.removeItem("karya_pending");
+      localStorage.setItem(PENDING_KEY, "[]");
+      alert("Semua data pending berjaya dihantar ke pangkalan data awan.");
+      kemaskiniStatusPendingUI();
+    }
+
+    async function syncRecord(record) {
+      return hantarKaryaMurid(record);
+    }
+
+    async function loadSyncedRecords() {
+      if(await loadCloudRecords()) {
+        if($('teacher-page') && !$('teacher-page').classList.contains('hidden')) renderTeacher();
+        return;
+      }
+      if(!SYNC_API_URL || !navigator.onLine) return;
+      try {
+        const response = await fetch(`${SYNC_API_URL}?action=list`, { cache: "no-store" });
+        if(!response.ok) throw new Error(`Sync HTTP ${response.status}`);
+        const payload = await response.json();
+        if(!Array.isArray(payload.records)) throw new Error("Respons API bukan senarai rekod.");
+        const localRecords = getRecords();
+        const mergedRecords = new Map(localRecords.map(record => [String(record.id), record]));
+        payload.records.forEach(record => {
+          mergedRecords.set(String(record.id), { ...mergedRecords.get(String(record.id)), ...record });
+        });
+        records = [...mergedRecords.values()];
+        saveRecords(records);
+        if($('teacher-page') && !$('teacher-page').classList.contains('hidden')) renderTeacher();
+      } catch(error) {
+        console.warn("Rekod bersama tidak dapat dimuatkan; menggunakan salinan tempatan.", error);
+      }
+    }
+
+    async function saveCloudRecord(record) {
+      if(typeof db === "undefined" || !navigator.onLine) return false;
+      try {
+        await db.collection(FIRESTORE_COLLECTION).doc(String(record.id)).set({
+          ...record,
+          refleksi: record.apresiasi_kendiri || "",
+          updated_at: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        return true;
+      } catch(error) {
+        console.warn("Simpanan Firebase gagal; salinan tempatan dikekalkan.", error);
+        return false;
+      }
+    }
+
+    async function loadCloudRecords() {
+      if(typeof db === "undefined" || !navigator.onLine) return false;
+      try {
+        const snapshot = await db.collection(FIRESTORE_COLLECTION).get();
+        const data = snapshot.docs.map(document => ({ id: document.id, ...document.data() }));
+        const localRecords = getRecords();
+        const mergedRecords = new Map(localRecords.map(record => [String(record.id), record]));
+        data.forEach(record => {
+          const normalizedRecord = { ...record, apresiasi_kendiri: record.apresiasi_kendiri || record.refleksi || "" };
+          mergedRecords.set(String(record.id), { ...mergedRecords.get(String(record.id)), ...normalizedRecord });
+        });
+        records = [...mergedRecords.values()];
+        saveRecords(records);
+        return true;
+      } catch(error) {
+        console.warn("Rekod Firebase tidak dapat dimuatkan; menggunakan salinan tempatan.", error);
+        return false;
+      }
+    }
+
+    async function deleteCloudRecord(id) {
+      if(typeof db === "undefined" || !navigator.onLine) return false;
+      try {
+        await db.collection(FIRESTORE_COLLECTION).doc(String(id)).delete();
+        return true;
+      } catch(error) {
+        console.warn("Pemadaman Firebase gagal.", error);
+        return false;
+      }
+    }
+
+    function escapeHTML(value) {
+      return String(value ?? "").replace(/[&<>\'"]/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;"
+      })[character]);
+    }
+
+    async function processStudentCard(event) {
+      const file = event.target.files[0];
+      const status = $("statusOCR");
+      if(!file) return;
+      if(!window.Tesseract) {
+        status.textContent = "OCR tidak tersedia. Sila isi borang secara manual.";
+        return;
+      }
+      status.textContent = "Sedang membaca kad maklumat. Sila tunggu...";
+      let worker;
+      try {
+        worker = await Tesseract.createWorker("msa+eng", 1, {
+          logger: message => {
+            if(message.status === "recognizing text") status.textContent = `Membaca kad: ${Math.round(message.progress * 100)}%`;
+          }
+        });
+        const result = await worker.recognize(file);
+        isiMedanBorang(result.data.text);
+        status.textContent = "Maklumat berjaya dibaca. Sila semak dan betulkan sebelum menghantar.";
+      } catch(error) {
+        status.textContent = "Kad tidak dapat dibaca dengan jelas. Sila isi borang secara manual.";
+      } finally {
+        if(worker) await worker.terminate();
+      }
+    }
+
+    function isiMedanBorang(text) {
+      const bersihTeks = text.replace(/[*=_+|~`#]/g, " ");
+      const lines = bersihTeks.split("\n");
+      lines.forEach(line => {
+        const baris = line.trim();
+        if(!baris) return;
+
+        function isiInput(ids, nilai) {
+          if(!nilai) return;
+          const valBersih = nilai.replace(/^[^\w\s]+|[^\w\s]+$/g, "").trim();
+          if(!valBersih || valBersih.length < 2) return;
+          for(const id of ids) {
+            const el = document.getElementById(id);
+            if(el) {
+              el.value = valBersih;
+              el.dispatchEvent(new Event("input", { bubbles: true }));
+              el.dispatchEvent(new Event("change", { bubbles: true }));
+              break;
+            }
+          }
+        }
+
+        function nilaiSelepasLabel(labelPattern) {
+          return baris.replace(labelPattern, "").replace(/^\s*[:\-]\s*/, "").trim();
+        }
+
+        if(/nama|murid|pelajar/i.test(baris) && !/apresiasi|kendiri|cikgu|guru|sekolah/i.test(baris)) {
+          const val = baris.replace(/^(nama|murid|pelajar|nama\s*murid|nama\s*pelajar)\s*[:\-]/i, "").trim();
+          isiInput(["student-name", "nama_murid", "namaMurid", "namaPelajar", "nama_pelajar"], val);
+        }
+        if(/kelas/i.test(baris) && !/jenis|tajuk/i.test(baris)) {
+          isiInput(["student-class", "kelas"], baris.replace(/^kelas\s*[:\-]/i, "").trim());
+        }
+        if(/sekolah|sk\b|smk\b/i.test(baris) && !/tajuk|jenis/i.test(baris)) {
+          isiInput(["student-school", "sekolah", "namaSekolah"], baris.replace(/^sekolah\s*[:\-]/i, "").trim());
+        }
+        if(/cikgu|guru/i.test(baris)) {
+          const val = baris.replace(/^(nama\s*cikgu|nama\s*guru|cikgu|guru)\s*[:\-]/i, "").trim();
+          isiInput(["student-teacher", "nama_guru", "namaGuru", "namaCikgu", "nama_cikgu"], val);
+        }
+        if(/jenis/i.test(baris)) {
+          const val = baris.replace(/^jenis\s*(karya)?\s*[:\-]/i, "").trim();
+          isiInput(["art-type", "jenis_karya", "jenisKarya"], val);
+        }
+        if(/tajuk/i.test(baris)) {
+          const val = baris.replace(/^tajuk\s*(karya)?\s*[:\-]/i, "").trim();
+          isiInput(["art-name", "tajuk_karya", "tajukKarya", "tajuk"], val);
+        }
+        if(/media/i.test(baris)) isiInput(["art-media", "media"], baris.replace(/^media\s*[:\-]/i, "").trim());
+        if(/bahan/i.test(baris)) isiInput(["art-materials", "bahan"], baris.replace(/^bahan\s*[:\-]/i, "").trim());
+        if(/teknik/i.test(baris)) isiInput(["art-technique", "teknik"], baris.replace(/^teknik\s*[:\-]/i, "").trim());
+        if(/unsur\s*seni|unsur/i.test(baris)) {
+          const val = baris.replace(/^unsur\s*(seni)?\s*[:\-]/i, "").trim();
+          isiInput(["art-elements", "unsur_seni", "unsurSeni", "unsur"], val);
+        }
+        if(/prinsip\s*rekaan|prinsip/i.test(baris)) {
+          const val = baris.replace(/^prinsip\s*(rekaan)?\s*[:\-]/i, "").trim();
+          isiInput(["art-principles", "prinsip_rekaan", "prinsipRekaan", "prinsip"], val);
+        }
+        if(/apresiasi|kendiri|refleksi|ulasan/i.test(baris)) {
+          const val = baris.replace(/^(apresiasi\s*kendiri|apresiasi|refleksi|ulasan)\s*[:\-]/i, "").trim();
+          isiInput(["reflection", "apresiasi_kendiri", "apresiasiKendiri", "apresiasi", "refleksi"], val);
+        }
+      });
+    }
+
+    let records = getRecords();
+    let selectedIndex = null;
+    let teacherAuthenticated = false;
+    $("home-notice-message").textContent = localStorage.getItem(NOTICE_KEY) || "Keputusan penilaian boleh disemak melalui laman murid.";
+
+    // NAVIGASI
+    function showPage(name) {
+      Object.entries(pages).forEach(([k, p]) => p.classList.toggle("hidden", k !== name));
+      Object.entries(nav).forEach(([k, b]) => b.setAttribute("aria-current", k === name ? "page" : "false"));
+      if(name === "teacher") {
+        renderTeacher();
+        loadSyncedRecords();
+      }
+      if(name === "gallery") renderGallery();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function requestTeacherAccess() {
+      if(teacherAuthenticated) {
+        showPage("teacher");
+        return;
+      }
+      $("teacher-access-modal").classList.remove("hidden");
+      $("teacher-access-code").value = "";
+      $("teacher-access-error").classList.add("hidden");
+      $("teacher-access-code").focus();
+    }
+
+    function closeTeacherAccess() {
+      $("teacher-access-modal").classList.add("hidden");
+    }
+
+    $("nav-home").onclick = () => showPage("home");
+    $("nav-student").onclick = () => showPage("student");
+    $("nav-teacher").onclick = requestTeacherAccess;
+    $("nav-survey").onclick = () => showPage("survey");
+    $("nav-gallery").onclick = () => showPage("gallery");
+    $("home-student").onclick = () => showPage("student");
+    $("home-teacher").onclick = requestTeacherAccess;
+    $("brand-home").onclick = () => showPage("home");
+    $("teacher-access-form").onsubmit = event => {
+      event.preventDefault();
+      if($("teacher-access-code").value.trim().toUpperCase() !== TEACHER_ACCESS_CODE) {
+        $("teacher-access-error").classList.remove("hidden");
+        $("teacher-access-code").select();
+        return;
+      }
+      teacherAuthenticated = true;
+      closeTeacherAccess();
+      showPage("teacher");
+    };
+    $("cancel-teacher-access").onclick = closeTeacherAccess;
+    $("teacher-access-modal").onclick = event => {
+      if(event.target === $("teacher-access-modal")) closeTeacherAccess();
+    };
+    $("rubric-modal").onclick = event => {
+      if(event.target === $("rubric-modal")) closeRubric();
+    };
+    document.addEventListener("keydown", event => {
+      if(event.key === "Escape") closeRubric();
+    });
+    $("print-report").onclick = () => window.print();
+    $("filter-year").onchange = renderTeacher;
+    $("filter-status").onchange = renderTeacher;
+    $("inputGambarKad").addEventListener("change", processStudentCard);
+    $("filter-class").oninput = renderTeacher;
+    $("filter-student").onchange = renderTeacher;
+    if($("report-year")) $("report-year").onchange = renderTeacher;
+    if($("report-class")) $("report-class").oninput = renderTeacher;
+    $("delete-record").onclick = deleteSelectedRecord;
+    $("notice-form").onsubmit = event => {
+      event.preventDefault();
+      const notice = $("teacher-notice").value.trim();
+      if(!notice) {
+        toast("Sila tulis notis sebelum menyimpan.", "error");
+        $("teacher-notice").focus();
+        return;
+      }
+      localStorage.setItem(NOTICE_KEY, notice);
+      $("home-notice-message").textContent = notice;
+      toast("Notis berjaya disimpan.");
+    };
+    $("teacher-notice").value = localStorage.getItem(NOTICE_KEY) || "";
+
+    function getFilteredRecords() {
+      const yearFilter = $("filter-year").value;
+      const classFilter = $("filter-class").value.trim().toLowerCase();
+      const studentFilter = $("filter-student").value;
+      const statusFilter = $("filter-status").value;
+      return getRecords().filter(record =>
+        (!yearFilter || record.tahun === yearFilter) &&
+        (!classFilter || String(record.kelas || "").toLowerCase().includes(classFilter)) &&
+        (!studentFilter || `${record.nama_murid} | ${record.sekolah}` === studentFilter) &&
+        (!statusFilter || record.status === statusFilter)
+      );
+    }
+
+    function getReportRecords() {
+      const year = $("report-year").value;
+      const className = $("report-class").value.trim().toLowerCase();
+      return getRecords().filter(record => (!year || record.tahun === year) && (!className || String(record.kelas || "").toLowerCase().includes(className)));
+    }
+
+    function downloadReport() {
+      const assessed = getFilteredRecords().filter(record => record.status === "Dinilai");
+      if(!assessed.length) {
+        toast("Tiada karya yang telah dinilai untuk dimuat turun.", "error");
+        return;
+      }
+      const headers = ["Bil.", "Murid", "Sekolah", "Tahun", "Kelas", "Tajuk karya", "Jenis", "Media", "Bahan", "Teknik", "Markah", "TP", "Ulasan untuk murid", "Aktiviti susulan", "Tarikh nilai"];
+      const rows = assessed.map((record, index) => [
+        index + 1, record.nama_murid, record.sekolah, record.tahun, record.kelas, record.tajuk_karya,
+        record.jenis_karya, record.media || "-", record.bahan || "-", record.teknik || "-", `${record.total_score} / 100`, getPerformanceLevel(record.total_score),
+        record.ulasan_guru || "Tiada ulasan", record.aktiviti_susulan || "Tiada", record.tarikh_dinilai || record.tarikh || "-"
+      ]);
+      const csv = [headers, ...rows].map(row => row.map(value => `"${String(value ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }));
+      link.download = `laporan-keseluruhan-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      toast("Laporan berjaya dimuat turun.");
+    }
+
+    function initFeedbackQR() {
+      document.querySelectorAll(".feedback-qr").forEach(image => {
+        image.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(image.dataset.url)}`;
+      });
+    }
+
+    async function copyAccessLink(inputId) {
+      const input = $(inputId);
+      if(!input) return;
+      try {
+        await navigator.clipboard.writeText(input.value);
+        toast("Pautan berjaya disalin.");
+      } catch(error) {
+        input.select();
+        document.execCommand("copy");
+        toast("Pautan berjaya disalin.");
+      }
+    }
+
+    initFeedbackQR();
+    function renderGallery() {
+      const assessed = getRecords().filter(record => record.status === "Dinilai" && record.gambar_karya);
+      const gallery = $("gallery-grid");
+      gallery.innerHTML = assessed.length ? assessed.map(record => `
+        <article class="gallery-card">
+          <img class="gallery-image" src="${escapeHTML(record.gambar_karya)}" alt="Karya ${escapeHTML(record.tajuk_karya)} oleh ${escapeHTML(record.nama_murid)}">
+          <div class="p-4"><h3 class="font-bold text-lg">${escapeHTML(record.tajuk_karya)}</h3><p class="text-sm text-gray-500 mt-1">${escapeHTML(record.nama_murid)}</p><p class="text-xs text-gray-500 mt-2">${escapeHTML(record.tahun)} · ${escapeHTML(record.kelas)}</p></div>
+        </article>`).join("") : `<p class="text-sm text-gray-500 col-span-full text-center py-8">Belum ada karya bergambar yang telah dinilai.</p>`;
+    }
+
+    function toast(msg, type = "success") {
+      const t = $("toast"); t.textContent = msg;
+      t.style.background = type === "error" ? "#a83224" : "#164e63";
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 3000);
+    }
+
+    // RUBRIK PENILAIAN
+    const rubric = [
+      { key: "persepsi_visual", label: "Persepsi Visual (Unsur Seni & Prinsip Rekaan)", max: 20, defaultValue: 12 },
+      { key: "aplikasi_seni", label: "Aplikasi Seni (Media, Bahan & Teknik)", max: 25, defaultValue: 15 },
+      { key: "ekspresi_kreatif", label: "Ekspresi Kreatif (Pengolahan Idea & Komposisi)", max: 30, defaultValue: 18 },
+      { key: "apresiasi_seni", label: "Apresiasi Seni (Refleksi & Ulasan Kendiri)", max: 15, defaultValue: 8 },
+      { key: "sikap_sahsiah", label: "Sikap & Sahsiah (Kekemasan & Komitmen)", max: 10, defaultValue: 7 }
+    ];
+    const rubricLevels = [
+      ["16–20 · Garisan, rupa dan bentuk jelas serta menyokong idea.", "8–15 · Elemen dapat dilihat tetapi penggunaannya belum konsisten.", "1–7 · Elemen sukar dikenal pasti atau tidak menyokong idea."],
+      ["18–25 · Ruang, imbangan dan penegasan diolah dengan terancang.", "9–17 · Susunan asas ada tetapi fokus atau imbangan belum stabil.", "1–8 · Ruang dan susunan tidak membantu penyampaian karya."],
+      ["21–30 · Jalinan serta irama/pergerakan digunakan secara kreatif dan berkesan.", "11–20 · Penggunaan jalinan atau pergerakan sesuai tetapi terhad.", "1–10 · Jalinan dan pergerakan kurang jelas atau tidak terkawal."],
+      ["11–15 · Warna harmoni, kontra dan penegasan menjadikan karya menarik.", "6–10 · Warna sesuai tetapi ton atau kontra belum konsisten.", "1–5 · Warna kurang seimbang dan fokus karya tidak jelas."],
+      ["8–10 · Kepelbagaian, kesatuan dan kekemasan sangat baik.", "4–7 · Karya hampir siap tetapi ada bahagian kurang kemas.", "1–3 · Karya tidak siap, kurang kemas atau unsur tidak bersatu."]
+    ];
+
+    function initRubric() {
+      const container = $("rubric-list"); container.innerHTML = "";
+      const updateTotalAndTP = () => {
+        const total = rubric.reduce((sum, item, index) => sum + Number($(`rubric-in-${index}`).value), 0);
+        $("teacher-total-score").textContent = total;
+        $("teacher-tp-score").textContent = getPerformanceLevel(total);
+      };
+      rubric.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = "rubric-card";
+        div.innerHTML = `
+          <div class="flex justify-between font-bold text-sm">
+            <span>${item.label} [0-${item.max}]</span><span id="score-val-${index}">${item.defaultValue} / ${item.max}</span>
+          </div>
+          <input id="rubric-in-${index}" type="range" min="0" max="${item.max}" value="${item.defaultValue}" class="mt-2">
+        `;
+        container.appendChild(div);
+        div.querySelector("input").oninput = (e) => {
+          $(`score-val-${index}`).textContent = `${e.target.value} / ${item.max}`;
+          kemaskiniJumlahMarkah();
+        };
+      });
+      updateTotalAndTP();
+    }
+    initRubric();
+
+    function kemaskiniJumlahMarkah() {
+      const sliderIds = ["m_persepsi", "m_aplikasi", "m_ekspresi", "m_apresiasi", "m_sikap"];
+      const values = sliderIds.map((id, index) => {
+        const slider = document.getElementById(id) || document.getElementById(`rubric-in-${index}`);
+        const value = parseInt(slider?.value || 0, 10);
+        const label = document.getElementById(`val_${id.replace("m_", "")}`) || document.getElementById(`score-val-${index}`);
+        if(label) label.textContent = `${value} / ${rubric[index].max}`;
+        return value;
+      });
+      const jumlah = values.reduce((sum, value) => sum + value, 0);
+      const tp = jumlah > 90 ? "TP6" : jumlah > 75 ? "TP5" : jumlah > 60 ? "TP4" : jumlah > 40 ? "TP3" : jumlah > 20 ? "TP2" : "TP1";
+      const totalElement = document.getElementById("paparan_jumlah_markah") || document.getElementById("teacher-total-score");
+      const tpElement = document.getElementById("paparan_tp") || document.getElementById("teacher-tp-score");
+      if(totalElement) totalElement.textContent = jumlah;
+      if(tpElement) tpElement.textContent = tp;
+      return { m1: values[0], m2: values[1], m3: values[2], m4: values[3], m5: values[4], jumlah, tp };
+    }
+    kemaskiniJumlahMarkah();
+
+    function janaAnalisisAI() {
+      const { m1, m2, jumlah, tp } = kemaskiniJumlahMarkah();
+      const record = selectedIndex === null ? {} : records[selectedIndex] || {};
+      const getValue = (ids, recordKeys, fallback) => ids.map(id => document.getElementById(id)?.value.trim()).find(Boolean) || recordKeys.map(key => String(record[key] || "").trim()).find(Boolean) || fallback;
+      const namaMurid = getValue(["nama_murid", "student-name"], ["nama_murid"], "Murid");
+      const tajukKarya = getValue(["tajuk_karya", "art-name"], ["tajuk_karya"], "karya ini");
+      const media = getValue(["media", "art-media"], ["media"], "media seni");
+      const teknik = getValue(["teknik", "art-technique"], ["teknik"], "teknik pilihan");
+      const unsurSeni = getValue(["unsur_seni", "art-elements"], ["unsur_seni"], "unsur seni");
+      const prinsipRekaan = getValue(["prinsip_rekaan", "art-principles"], ["prinsip_rekaan"], "prinsip rekaan");
+      let ulasanGuru = `Syabas ${namaMurid}! Cikgu amat menghargai usaha kamu dalam menghasilkan "${tajukKarya}". `;
+      if(m1 >= 16) ulasanGuru += `Aplikasi ${unsurSeni} dan ${prinsipRekaan} digarap dengan sangat tepat dan menarik. `;
+      else if(m1 >= 8) ulasanGuru += `Penggunaan ${unsurSeni} sudah baik, cuma boleh dipertingkatkan dari segi susunan ${prinsipRekaan}. `;
+      else ulasanGuru += `Perlu lebih bimbingan untuk memahami dan mengaplikasikan ${unsurSeni} pada karya. `;
+      if(m2 >= 18) ulasanGuru += `Penguasaan ${media} dan teknik ${teknik} dilihat sangat kemas serta mantap. `;
+      else if(m2 >= 9) ulasanGuru += `Penggunaan ${media} mengikut teknik ${teknik} berjalan lancar, teruskan latihan untuk hasil lebih rata. `;
+      else ulasanGuru += `Boleh tingkatkan lagi kemahiran kawalan ${media} dan aplikasi teknik ${teknik}. `;
+      ulasanGuru += `Pencapaian keseluruhan kamu ialah ${jumlah} markah (${tp}). Teruskan minat dan usaha ini!`;
+      const aktivitiSusulan = jumlah >= 76
+        ? `Sediakan sudut pameran kecil atau bantu rakan sekelas dengan berkongsi teknik ${teknik} yang kamu gunakan.`
+        : jumlah >= 41
+          ? `Lakukan aktiviti pengukuhan bagi teknik ${teknik} dan bereksperimen dengan pencampuran warna ${media}.`
+          : `Bimbingan asas secara berpandu bersama guru untuk mengukuhkan teknik ${teknik} dan pemahaman ${unsurSeni}.`;
+      const review = document.getElementById("ulasan_guru") || document.getElementById("teacher-review");
+      const followup = document.getElementById("cadangan_aktiviti") || document.getElementById("followup");
+      if(review) review.value = ulasanGuru;
+      if(followup) followup.value = aktivitiSusulan;
+      const reflection = document.getElementById("apresiasi_kendiri") || document.getElementById("reflection");
+      if(reflection) reflection.value = `Karya bertajuk "${tajukKarya}" ini dihasilkan dengan ${media} menggunakan teknik ${teknik}. Gabungan ${unsurSeni} dan ${prinsipRekaan} diaplikasikan mengikut kebolehan saya. Berdasarkan penilaian semula, pencapaian karya ini memperoleh skor ${jumlah} (${tp}).`;
+      return { ulasanGuru, aktivitiSusulan, jumlah, tp };
+    }
+
+    function openRubric() {
+      $("rubric-modal").classList.remove("hidden");
+      $("close-rubric").focus();
+    }
+
+    function closeRubric() {
+      $("rubric-modal").classList.add("hidden");
+    }
+
+    async function analyzeArtworkImage(imageData) {
+      if(!imageData) return { colorfulness: 0, contrast: 0, brightness: 0.5, detail: 0, balance: 0, neatness: 0 };
+      return new Promise(resolve => {
+        const image = new Image();
+        image.onload = () => {
+          const canvas = document.createElement("canvas");
+          const size = 48;
+          canvas.width = size; canvas.height = size;
+          const context = canvas.getContext("2d", { willReadFrequently: true });
+          context.drawImage(image, 0, 0, size, size);
+          const pixels = context.getImageData(0, 0, size, size).data;
+          let brightness = 0, colorfulness = 0, contrast = 0, detail = 0, previous = null;
+          const quadrantBrightness = [0, 0, 0, 0];
+          const quadrantCounts = [0, 0, 0, 0];
+          for(let index = 0; index < pixels.length; index += 4) {
+            const pixelIndex = index / 4;
+            const x = pixelIndex % size;
+            const y = Math.floor(pixelIndex / size);
+            const quadrant = (y >= size / 2 ? 2 : 0) + (x >= size / 2 ? 1 : 0);
+            const red = pixels[index], green = pixels[index + 1], blue = pixels[index + 2];
+            const lightness = (red + green + blue) / 765;
+            brightness += lightness;
+            quadrantBrightness[quadrant] += lightness;
+            quadrantCounts[quadrant] += 1;
+            colorfulness += (Math.max(red, green, blue) - Math.min(red, green, blue)) / 255;
+            if(previous !== null) { contrast += Math.abs(lightness - previous); detail += Math.min(1, Math.abs(lightness - previous) * 4); }
+            previous = lightness;
+          }
+          const count = pixels.length / 4;
+          const averageQuadrant = quadrantBrightness.map((total, index) => total / quadrantCounts[index]);
+          const balance = 1 - Math.min(1, (Math.abs(averageQuadrant[0] - averageQuadrant[3]) + Math.abs(averageQuadrant[1] - averageQuadrant[2])) / 2);
+          const averageContrast = contrast / (count - 1);
+          resolve({ brightness: brightness / count, colorfulness: colorfulness / count, contrast: averageContrast, detail: detail / (count - 1), balance, neatness: Math.max(0, 1 - averageContrast * 2) });
+        };
+        image.onerror = () => resolve({ colorfulness: 0, contrast: 0, brightness: 0.5, detail: 0, balance: 0, neatness: 0 });
+        image.src = imageData;
+      });
+    }
+
+    function getSuggestedScores(imageFeatures) {
+      const detailBoost = Math.min(0.16, imageFeatures.detail * 0.16);
+      const colorBoost = Math.min(0.14, imageFeatures.colorfulness * 0.28);
+      const contrastBoost = Math.min(0.12, imageFeatures.contrast * 0.35);
+      const balanceBoost = Math.min(0.1, imageFeatures.balance * 0.1);
+      return rubric.reduce((scores, item) => {
+        let ratio = 0.38 + detailBoost;
+        if(item.key === "persepsi_visual") ratio += contrastBoost + balanceBoost;
+        if(item.key === "aplikasi_seni") ratio += detailBoost + imageFeatures.neatness * 0.08;
+        if(item.key === "ekspresi_kreatif") ratio += detailBoost + colorBoost + balanceBoost;
+        if(item.key === "apresiasi_seni") ratio += balanceBoost;
+        if(item.key === "sikap_sahsiah") ratio += imageFeatures.neatness * 0.12;
+        ratio = Math.min(0.96, ratio);
+        scores[item.key] = Math.max(1, Math.round(item.max * ratio));
+        return scores;
+      }, {});
+    }
+
+    function getFeedback(scores, imageFeatures) {
+      const weakest = rubric.reduce((current, item) => scores[item.key] / item.max < scores[current.key] / current.max ? item : current, rubric[0]);
+      const visualEvidence = imageFeatures.colorfulness < 0.22 ? "Warna kelihatan agak terhad" : "Warna menunjukkan variasi yang baik";
+      const principleEvidence = imageFeatures.balance > 0.65 ? "imbangan gubahan kelihatan agak stabil" : "imbangan ruang masih boleh diperkemas";
+      const suggestions = {
+        persepsi_visual: `Perkemas penggunaan unsur seni dan prinsip rekaan untuk menguatkan idea karya; ${principleEvidence}.`,
+        aplikasi_seni: "Perincikan penggunaan media, bahan dan teknik pada bahagian utama supaya hasil lebih terkawal.",
+        ekspresi_kreatif: `Perkemas pengolahan idea dan komposisi supaya fokus karya lebih jelas; ${principleEvidence}.`,
+        apresiasi_seni: "Jelaskan refleksi kendiri dengan menyatakan pilihan idea, kekuatan karya dan perkara yang boleh ditambah baik.",
+        sikap_sahsiah: "Kemaskan tepi, sapuan dan ruang kosong karya. Pastikan karya bersih, lengkap dan menunjukkan komitmen."
+      };
+      const activities = {
+        persepsi_visual: "Kenal pasti unsur seni dan prinsip rekaan utama pada karya, kemudian jelaskan fungsinya.",
+        aplikasi_seni: "Uji media, bahan dan teknik pada kertas kecil, kemudian pilih kaedah yang paling sesuai dengan idea.",
+        ekspresi_kreatif: "Buat dua lakaran susunan untuk menguji pengolahan idea, komposisi dan fokus sebelum menyiapkan karya.",
+        apresiasi_seni: "Tulis refleksi kendiri tentang idea, kekuatan karya dan satu perkara yang boleh ditambah baik.",
+        sikap_sahsiah: "Gunakan senarai semak karya: tepi kemas, permukaan bersih, hasil lengkap dan tugasan disiapkan dengan komitmen."
+      };
+      const criteriaSummary = rubric.map(item => item.label).join(", ");
+      return { review: `Tahniah, karya ini menunjukkan usaha dan idea yang baik. Penilaian berdasarkan lima kriteria rubrik (${criteriaSummary}). Aspek yang boleh diperkemas ialah ${weakest.label.toLowerCase()}. ${suggestions[weakest.key]}`, followup: activities[weakest.key], weakest: weakest.label };
+    }
+
+    function getTahapLabel(score) {
+      return getPerformanceLevel(score);
+    }
+
+    function updateSelfAssessmentAvailability() {
+      const available = navigator.onLine;
+      $("self-assessment-btn").disabled = !available;
+      $("self-assessment-btn").title = available ? "Jana cadangan penilaian kendiri dengan AI" : "Tiada internet. Penilaian guru dibuat secara manual.";
+    }
+
+    async function generateSelfAssessment() {
+      const form = $("student-form");
+      $("student-error").classList.add("hidden");
+      if(!navigator.onLine) {
+        toast("Tiada internet. Penilaian kendiri AI tidak tersedia.", "error");
+        return;
+      }
+      if(!form.checkValidity()) {
+        $("student-error").textContent = "Lengkapkan maklumat karya dahulu untuk menjalankan penilaian kendiri.";
+        $("student-error").classList.remove("hidden");
+        form.reportValidity();
+        return;
+      }
+      const imageFile = $("art-image").files[0];
+      const imageData = imageFile ? await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => resolve("");
+        reader.readAsDataURL(imageFile);
+      }) : "";
+      const imageFeatures = await analyzeArtworkImage(imageData);
+      const scores = getSuggestedScores(imageFeatures);
+      const total = Object.values(scores).reduce((sum, score) => sum + score, 0);
+      const feedback = getFeedback(scores, imageFeatures);
+      $("self-score-title").textContent = getTahapLabel(total);
+      $("self-score-badge").textContent = total;
+      $("self-score-details").innerHTML = rubric.map(item => `<div class="self-score-card"><strong>${item.label}</strong><p>${scores[item.key]} / ${item.max}</p></div>`).join("");
+      $("self-suggestion-text").textContent = `${feedback.review} Aktiviti susulan: ${feedback.followup}`;
+      const reflection = document.getElementById("reflection");
+      if(reflection && !reflection.value.trim()) {
+        const getValue = (ids, fallback) => ids.map(id => document.getElementById(id)?.value.trim()).find(Boolean) || fallback;
+        const tajukKarya = getValue(["tajuk_karya", "art-name"], "karya ini");
+        const media = getValue(["media", "art-media"], "media seni");
+        const teknik = getValue(["teknik", "art-technique"], "teknik pilihan");
+        const unsurSeni = getValue(["unsur_seni", "art-elements"], "unsur seni");
+        const prinsipRekaan = getValue(["prinsip_rekaan", "art-principles"], "prinsip rekaan");
+        reflection.value = `Karya bertajuk "${tajukKarya}" ini dihasilkan menggunakan ${media} dengan ${teknik}. Saya telah mengaplikasikan ${unsurSeni} serta ${prinsipRekaan} bagi mewujudkan kesan visual yang seimbang. Penilaian kendiri ini menunjukkan pencapaian skor ${total} (${getTahapLabel(total)}) berdasarkan penguasaan media dan kekemasan karya saya.`;
+      }
+      $("self-assessment-panel").classList.remove("hidden");
+      toast("Penilaian kendiri berjaya dijana.");
+    }
+
+    function updateAIAvailability() {
+      const available = navigator.onLine && selectedIndex !== null;
+      $("ai-assist-btn").disabled = !available;
+      $("ai-status").textContent = navigator.onLine ? (selectedIndex === null ? "Pilih karya dahulu untuk mendapatkan cadangan." : "Sambungan tersedia. Cadangan AI boleh digunakan.") : "Tiada internet. Gunakan penilaian manual melalui slider dan ruangan ulasan.";
+    }
+
+    async function generateAIAssessment() {
+      if(!navigator.onLine || selectedIndex === null) {
+        toast("Tiada internet. Sila beri penilaian secara manual.", "error");
+        return;
+      }
+      janaAnalisisAI();
+      $("ai-status").textContent = "Cadangan AI telah diisi. Sila semak dan ubah sebelum menyimpan.";
+      toast("Cadangan AI berjaya dijana.");
+    }
+
+    $("student-rubric-btn").onclick = openRubric;
+    $("teacher-rubric-btn").onclick = openRubric;
+    $("ai-assist-btn").onclick = generateAIAssessment;
+    $("self-assessment-btn").onclick = generateSelfAssessment;
+    $("clear-student-form").onclick = () => {
+      $("student-form").reset();
+      $("student-error").classList.add("hidden");
+      $("self-assessment-panel").classList.add("hidden");
+    };
+    window.addEventListener("online", updateAIAvailability);
+    window.addEventListener("offline", updateAIAvailability);
+    window.addEventListener("online", updateSelfAssessmentAvailability);
+    window.addEventListener("offline", updateSelfAssessmentAvailability);
+    window.addEventListener("online", () => { kemaskiniStatusPendingUI(); hantarSemulaDataPending(); });
+    window.addEventListener("offline", kemaskiniStatusPendingUI);
+    $("sync-pending-btn").onclick = hantarSemulaDataPending;
+    kemaskiniStatusPendingUI();
+    updateSelfAssessmentAvailability();
+    $("close-rubric").onclick = closeRubric;
+    $("rubric-modal").onclick = event => {
+      if(event.target === $("rubric-modal")) closeRubric();
+    };
+    document.addEventListener("keydown", event => {
+      if(event.key === "Escape") closeRubric();
+    });
+
+    // HANTAR FORM MURID
+    $("student-form").onsubmit = async (e) => {
+      e.preventDefault();
+      const error = $("student-error");
+      error.classList.add("hidden");
+      if(!e.currentTarget.checkValidity()) {
+        error.textContent = "Sila lengkapkan semua maklumat wajib sebelum menghantar karya.";
+        error.classList.remove("hidden");
+        e.currentTarget.reportValidity();
+        return;
+      }
+      const imageFile = $("art-image").files[0];
+      let imageData = "";
+      try {
+        imageData = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(imageFile);
+        });
+      } catch(readError) {
+        error.textContent = "Gambar karya tidak dapat dibaca. Sila cuba lagi.";
+        error.classList.remove("hidden");
+        return;
+      }
+
+      const newRecord = {
+        id: Date.now(),
+        nama_murid: $("student-name").value.trim(),
+        tahun: $("student-year").value,
+        kelas: $("student-class").value.trim(),
+        sekolah: $("student-school").value.trim(),
+        nama_guru: $("student-teacher").value.trim(),
+        jenis_karya: $("art-type").value,
+        tajuk_karya: $("art-name").value.trim(),
+        media: $("art-media").value.trim(),
+        bahan: $("art-materials").value.trim(),
+        teknik: $("art-technique").value.trim(),
+        unsur_seni: $("art-elements").value.trim(),
+        prinsip_rekaan: $("art-principles").value.trim(),
+        gambar_karya: imageData,
+        apresiasi_kendiri: $("reflection").value.trim(),
+        status: "Dihantar",
+        tarikh: new Date().toLocaleDateString("ms-MY")
+      };
+
+      records.push(newRecord);
+      saveRecords(records);
+      $("student-form").reset();
+      $("inputGambarKad").value = "";
+      $("statusOCR").textContent = "";
+      $("statusOCR").style.display = "none";
+      $("self-assessment-panel").classList.add("hidden");
+      const synced = await syncRecord(newRecord);
+      toast(synced ? "Karya berjaya dihantar dan disegerakkan." : "Karya disimpan pada peranti. Penyegerakan akan dicuba semula apabila sambungan tersedia.", synced ? "success" : "error");
+    };
+
+    // SEMAK KEPUTUSAN MURID
+    $("result-form").onsubmit = async (e) => {
+      e.preventDefault();
+      const name = $("result-name").value.trim().toLocaleLowerCase("ms-MY");
+      const school = $("result-school").value.trim().toLocaleLowerCase("ms-MY");
+      await loadCloudRecords();
+      records = getRecords();
+      const matchingRecords = records.filter(r => String(r.nama_murid || "").trim().toLocaleLowerCase("ms-MY") === name && String(r.sekolah || "").trim().toLocaleLowerCase("ms-MY") === school);
+      const assessedRecords = matchingRecords.filter(r => r.status === "Dinilai");
+
+      const msg = $("result-message");
+      msg.classList.remove("hidden");
+      if(!matchingRecords.length) {
+        msg.className = "error mt-4"; msg.textContent = "Rekod karya tidak ditemui.";
+      } else if(!assessedRecords.length) {
+        msg.className = "p-4 bg-yellow-100 text-yellow-800 rounded-xl mt-4"; msg.textContent = "Karya telah diterima, belum dinilai oleh guru.";
+      } else {
+        msg.className = "student-results-print p-4 bg-white border rounded-xl mt-4 text-left text-sm";
+        msg.innerHTML = `
+          <div class="flex items-start justify-between gap-3 mb-4">
+            <div><p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(232, 93, 74);">Keputusan Penilaian</p><h3 class="display-font text-2xl mt-1 text-[#17324d]">${escapeHTML(assessedRecords[0].nama_murid)}</h3><p class="text-gray-500 mt-1">${escapeHTML(assessedRecords[0].sekolah)}</p></div>
+            <button class="result-print-action btn shrink-0" type="button" style="background: rgb(22, 78, 99); color: white;" onclick="printStudentResults()">Cetak / Simpan</button>
+          </div>
+          <div class="student-result-table-wrap"><table class="student-result-table"><thead><tr><th>Bil.</th><th>Gambar</th><th>Tajuk karya</th><th>Jenis</th><th>Media</th><th>Bahan</th><th>Teknik</th><th>Markah</th><th>Tahap</th><th>Ulasan untuk murid</th><th>Aktiviti susulan</th><th>Tarikh nilai</th></tr></thead><tbody>
+          ${assessedRecords.map((record, index) => `<tr><td>${index + 1}</td><td>${record.gambar_karya ? `<img class="art-thumb" src="${escapeHTML(record.gambar_karya)}" alt="Karya ${escapeHTML(record.nama_murid)}">` : "-"}</td><td>${escapeHTML(record.tajuk_karya)}</td><td>${escapeHTML(record.jenis_karya)}</td><td>${escapeHTML(record.media || "-")}</td><td>${escapeHTML(record.bahan || "-")}</td><td>${escapeHTML(record.teknik || "-")}</td><td>${escapeHTML(record.unsur_seni || "-")}</td><td>${escapeHTML(record.prinsip_rekaan || "-")}</td><td><strong>${escapeHTML(record.total_score)} / 100</strong></td><td>${getPerformanceLevel(record.total_score)}</td><td>${escapeHTML(record.ulasan_guru || "Tiada ulasan")}</td><td>${escapeHTML(record.aktiviti_susulan || "Tiada")}</td><td>${escapeHTML(record.tarikh_dinilai || record.tarikh || "-")}</td></tr>`).join("")}
+          </tbody></table></div>
+        `;
+      }
+    };
+
+    function printStudentResults() {
+      document.body.classList.add("printing-student-results");
+      window.print();
+      setTimeout(() => document.body.classList.remove("printing-student-results"), 500);
+    }
+
+    // PAPARAN RUANG GURU
+    function renderTeacher() {
+      const list = $("record-list"); list.innerHTML = "";
+      records = getRecords();
+      const selectedStudent = $("filter-student").value;
+      const students = [...new Set(records.map(record => `${record.nama_murid} | ${record.sekolah}`))].sort((a, b) => a.localeCompare(b, "ms"));
+      $("filter-student").innerHTML = `<option value="">Semua murid</option>${students.map(student => `<option value="${escapeHTML(student)}">${escapeHTML(student.replace(" | ", " - "))}</option>`).join("")}`;
+      $("filter-student").value = students.includes(selectedStudent) ? selectedStudent : "";
+      const yearFilter = $("filter-year").value;
+      const classFilter = $("filter-class").value.trim().toLowerCase();
+      const studentFilter = $("filter-student").value;
+      const statusFilter = $("filter-status").value;
+      const visibleRecords = records.map((record, index) => ({ record, index })).filter(({ record }) =>
+        (!yearFilter || record.tahun === yearFilter) &&
+        (!classFilter || String(record.kelas || "").toLowerCase().includes(classFilter)) &&
+        (!studentFilter || `${record.nama_murid} | ${record.sekolah}` === studentFilter) &&
+        (!statusFilter || record.status === statusFilter)
+      );
+      $("record-count").textContent = `${visibleRecords.length} / ${records.length} Karya`;
+      renderAnalytics(visibleRecords.map(({ record }) => record));
+
+      if(visibleRecords.length === 0) {
+        list.innerHTML = `<p class="text-gray-500 text-sm text-center py-4">Tiada karya sepadan dengan tapisan.</p>`;
+        return;
+      }
+
+      visibleRecords.forEach(({ record: rec, index: idx }) => {
+        const btn = document.createElement("button");
+        btn.className = `record ${selectedIndex === idx ? 'selected' : ''}`;
+        btn.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="font-bold text-sm">${escapeHTML(rec.nama_murid)}</p>
+              <p class="text-xs text-gray-500">${escapeHTML(rec.tahun)} (${escapeHTML(rec.kelas)}) - ${escapeHTML(rec.sekolah)}</p>
+            </div>
+            <span class="pill ${rec.status === 'Dinilai' ? 'done' : 'pending'}">${escapeHTML(rec.status)}</span>
+          </div>
+          <h4 class="font-semibold text-base mt-2 text-[#164e63]">${escapeHTML(rec.tajuk_karya)}</h4>
+        `;
+        btn.onclick = () => selectRecord(idx);
+        list.appendChild(btn);
+      });
+    }
+
+    async function deleteSelectedRecord() {
+      if(selectedIndex === null || !records[selectedIndex]) return;
+      const record = records[selectedIndex];
+      if(!confirm(`Padam rekod karya "${record.tajuk_karya}" untuk ${record.nama_murid}?`)) return;
+      const deletedFromCloud = await deleteCloudRecord(record.id);
+      if(navigator.onLine && !deletedFromCloud) {
+        toast("Rekod tidak dapat dipadam daripada Firebase. Cuba lagi.", "error");
+        return;
+      }
+      records.splice(selectedIndex, 1);
+      saveRecords(records);
+      selectedIndex = null;
+      $("assessment-form").classList.add("hidden");
+      $("assessment-empty").classList.remove("hidden");
+      renderTeacher();
+      toast("Rekod karya berjaya dipadam.");
+    }
+
+    function renderAnalytics(filteredRecords = records) {
+      const assessed = filteredRecords.filter(record => record.status === "Dinilai");
+      const pending = filteredRecords.length - assessed.length;
+      const average = assessed.length ? assessed.reduce((sum, record) => sum + Number(record.total_score || 0), 0) / assessed.length : 0;
+      $("stat-assessed").textContent = assessed.length;
+      $("stat-average").textContent = assessed.length ? `${average.toFixed(1)} / 100` : "-";
+      $("stat-action").textContent = pending ? "Menunggu penilaian" : assessed.length ? "Semua dinilai" : "Menunggu penilaian";
+      const progress = records.length ? Math.round((assessed.length / records.length) * 100) : 0;
+      $("review-pending").textContent = pending;
+      $("review-assessed").textContent = assessed.length;
+      $("review-progress-label").textContent = `${progress}%`;
+      $("review-progress-bar").style.width = `${progress}%`;
+
+      const aspectAnalysis = $("aspect-analysis");
+      aspectAnalysis.innerHTML = rubric.map(item => {
+        const scores = assessed.map(record => record.rubric_scores?.[item.key]).filter(score => Number.isFinite(Number(score)));
+        const aspectAverage = scores.length ? scores.reduce((sum, score) => sum + Number(score), 0) / scores.length : 0;
+        const percentage = scores.length ? (aspectAverage / item.max) * 100 : 0;
+        return `<div class="aspect-card"><p class="font-semibold text-sm">${item.label}</p><p class="display-font text-xl mt-3">${scores.length ? aspectAverage.toFixed(1) : "-"}<span class="text-sm"> / ${item.max}</span></p><div class="aspect-track"><div class="aspect-fill" style="width: ${percentage}%"></div></div></div>`;
+      }).join("");
+      $("analysis-message").textContent = assessed.length ? "Analisis dikemas kini berdasarkan semua karya yang telah dinilai." : "Analisis akan dipaparkan selepas sekurang-kurangnya satu karya dinilai.";
+
+      const grouped = new Map();
+      filteredRecords.forEach(record => {
+        const key = `${record.nama_murid} | ${record.sekolah}`;
+        const student = grouped.get(key) || { name: record.nama_murid, school: record.sekolah, total: 0, assessed: 0, score: 0 };
+        student.total += 1;
+        if(record.status === "Dinilai") { student.assessed += 1; student.score += Number(record.total_score || 0); }
+        grouped.set(key, student);
+      });
+      const analysis = $("student-analysis");
+      if(analysis) analysis.innerHTML = grouped.size ? Array.from(grouped.values()).map(student => {
+        const score = student.assessed ? `${(student.score / student.assessed).toFixed(1)} / 100` : "Belum dinilai";
+        return `<div class="rubric-card"><div class="flex justify-between gap-3"><strong>${escapeHTML(student.name)}</strong><span class="pill ${student.assessed ? "done" : "pending"}">${score}</span></div><p class="text-xs text-gray-500 mt-1">${escapeHTML(student.school)} · ${student.assessed}/${student.total} karya dinilai</p></div>`;
+      }).join("") : `<p class="text-sm text-gray-500">Tiada data murid lagi.</p>`;
+
+      const reportRecords = getReportRecords();
+      const reportAssessed = reportRecords.filter(record => record.status === "Dinilai");
+      const reportPending = reportRecords.length - reportAssessed.length;
+      $("report-summary").textContent = reportRecords.length ? `${reportRecords.length} karya diterima, ${reportAssessed.length} telah dinilai dan ${reportPending} masih menunggu semakan.` : "Tiada laporan untuk dipaparkan.";
+      const reportBody = $("report-table-body");
+      reportBody.innerHTML = reportAssessed.length ? reportAssessed.map((record, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHTML(record.nama_murid)}<br><span class="text-gray-500">${escapeHTML(record.sekolah)}</span></td>
+          <td>${escapeHTML(record.tahun)} / ${escapeHTML(record.kelas)}</td>
+          <td>${record.gambar_karya ? `<img class="art-thumb" src="${escapeHTML(record.gambar_karya)}" alt="Karya ${escapeHTML(record.nama_murid)}">` : "-"}</td>
+          <td>${escapeHTML(record.tajuk_karya)}</td>
+          <td>${escapeHTML(record.jenis_karya)}</td>
+          <td><strong>${escapeHTML(record.total_score)} / 100</strong></td>
+          <td>${getPerformanceLevel(record.total_score)}</td>
+          <td>${escapeHTML(record.ulasan_guru || "Tiada ulasan")}</td>
+          <td>${escapeHTML(record.aktiviti_susulan || "Tiada")}</td>
+          <td>${escapeHTML(record.tarikh_dinilai || record.tarikh || "-")}</td>
+        </tr>`).join("") : `<tr><td colspan="11" class="text-center text-gray-500 py-8">Tiada karya yang telah dinilai untuk dipaparkan.</td></tr>`;
+    }
+
+    function getPerformanceLevel(score) {
+      const value = Number(score || 0);
+      if(value >= 91) return "TP6";
+      if(value >= 76) return "TP5";
+      if(value >= 61) return "TP4";
+      if(value >= 41) return "TP3";
+      if(value >= 21) return "TP2";
+      return "TP1";
+    }
+
+    function selectRecord(idx) {
+      selectedIndex = idx;
+      const rec = records[idx];
+      $("assessment-empty").classList.add("hidden");
+      $("assessment-form").classList.remove("hidden");
+
+      $("selected-title").textContent = rec.tajuk_karya;
+      $("selected-meta").textContent = `Oleh: ${rec.nama_murid} | ${rec.jenis_karya}`;
+      $("selected-reflection").textContent = rec.apresiasi_kendiri;
+      $("selected-art-details").textContent = `Media: ${rec.media || "Tiada"} | Bahan: ${rec.bahan || "Tiada"} | Teknik: ${rec.teknik || "Tiada"} | Unsur Seni: ${rec.unsur_seni || "Tiada"} | Prinsip Rekaan: ${rec.prinsip_rekaan || "Tiada"}`;
+      $("selected-image").src = rec.gambar_karya || "";
+      $("selected-image").classList.toggle("hidden", !rec.gambar_karya);
+
+      $("teacher-review").value = rec.ulasan_guru || "";
+      $("followup").value = rec.aktiviti_susulan || "";
+      updateAIAvailability();
+      rubric.forEach((item, index) => {
+        const value = rec.rubric_scores?.[item.key] ?? item.defaultValue;
+        $(`rubric-in-${index}`).value = value;
+        $(`score-val-${index}`).textContent = `${value} / ${item.max}`;
+      });
+      const selectedTotal = rubric.reduce((sum, item, index) => sum + Number($(`rubric-in-${index}`).value), 0);
+      $("teacher-total-score").textContent = selectedTotal;
+      $("teacher-tp-score").textContent = getPerformanceLevel(selectedTotal);
+
+      renderTeacher();
+    }
+
+    // SIMPAN PENILAIAN GURU
+    $("assessment-form").onsubmit = async (e) => {
+      e.preventDefault();
+      if(selectedIndex === null) return;
+
+      let total = 0;
+      const rubricScores = {};
+      rubric.forEach((item, index) => {
+        const score = Number($(`rubric-in-${index}`).value);
+        rubricScores[item.key] = score;
+        total += score;
+      });
+
+      records[selectedIndex].status = "Dinilai";
+      records[selectedIndex].total_score = total;
+      records[selectedIndex].rubric_scores = rubricScores;
+      records[selectedIndex].tarikh_dinilai = new Date().toLocaleDateString("ms-MY");
+      records[selectedIndex].ulasan_guru = $("teacher-review").value.trim();
+      records[selectedIndex].aktiviti_susulan = $("followup").value.trim();
+
+      saveRecords(records);
+      const synced = await syncRecord(records[selectedIndex]);
+      toast(synced ? "Penilaian guru berjaya disimpan dan disegerakkan." : "Penilaian disimpan pada laptop. Penyegerakan akan dicuba semula apabila sambungan tersedia.", synced ? "success" : "error");
+      renderTeacher();
+    };
+
+    // MUZIK SYNTHESIZER OFFLINE (WEB AUDIO API)
+    let audioCtx = null, isPlaying = false, musicTimer = null, musicStep = 0, autoMusicTriggered = false;
+    const melodies = {
+      calm: [261.63, 293.66, 329.63, 392.00, 329.63, 293.66],
+      bright: [392.00, 440.00, 493.88, 523.25, 493.88, 440.00],
+      dreamy: [329.63, 392.00, 493.88, 659.25, 493.88, 392.00],
+      piano: [261.63, 329.63, 392.00, 523.25, 659.25, 523.25],
+      guitar: [196.00, 246.94, 293.66, 246.94, 220.00, 246.94]
+    };
+    const musicChoice = $("music-choice");
+    function updateMusicButton() {
+      $("music-toggle").setAttribute("aria-pressed", String(isPlaying));
+      $("music-toggle").querySelector('[data-template-id="music-off-text"]').classList.toggle("hidden", isPlaying);
+      $("music-toggle").querySelector('[data-template-id="music-on-text"]').classList.toggle("hidden", !isPlaying);
+    }
+
+    function startMusic() {
+      if(isPlaying) return;
+      if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioCtx.resume();
+      isPlaying = true;
+      musicStep = 0;
+      playOfflineTone();
+      updateMusicButton();
+    }
+
+    $("music-toggle").onclick = () => {
+      autoMusicTriggered = true;
+      if(isPlaying) {
+        audioCtx.suspend(); isPlaying = false; clearTimeout(musicTimer);
+      } else {
+        startMusic();
+      }
+      updateMusicButton();
+    };
+    function triggerAutoMusic(event) {
+      const button = event.target.closest("button");
+      if(button && button.id !== "music-toggle" && !autoMusicTriggered) {
+        autoMusicTriggered = true;
+        startMusic();
+      }
+    }
+    document.addEventListener("pointerdown", triggerAutoMusic, true);
+    document.addEventListener("click", triggerAutoMusic, true);
+    musicChoice.onchange = () => {
+      musicStep = 0;
+      if(isPlaying) playOfflineTone();
+    };
+
+    function playOfflineTone() {
+      if(!isPlaying) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      const melody = melodies[musicChoice.value] || melodies.calm;
+      osc.frequency.setValueAtTime(melody[musicStep % melody.length], audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.06, audioCtx.currentTime + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.42);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.45);
+      musicStep += 1;
+      musicTimer = setTimeout(playOfflineTone, 520);
+    }
+  
+</script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <script>
+      // Konfigurasi Firebase Projek creativelense-ai
+      const firebaseConfig = {
+        apiKey: "AIzaSyAVojd8k70FLpZYTqtNouYNs1DnDP8i9oU",
+        authDomain: "creativelense-ai.firebaseapp.com",
+        projectId: "creativelense-ai",
+        storageBucket: "creativelense-ai.firebasestorage.app",
+        messagingSenderId: "652721621512",
+        appId: "1:652721621512:web:f4efb87a30d43b780c1fbd",
+        measurementId: "G-48GS0BD679"
+      };
+
+      // Inisialisasi Firebase
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+
+  // Aktifkan Offline Persistence
+    db.enablePersistence({ synchronizeTabs: true })
+      .then(() => console.log("Firebase Offline Persistence Aktif!"))
+      .catch((err) => console.error("Ralat Persistence:", err.code));
+  </script>
+
+  <!-- Skrip Pendaftaran PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(() => console.log('PWA Service Worker Berjaya!'))
+          .catch((err) => console.log('Ralat PWA:', err));
+      });
+    }
+  </script>
+</body>    

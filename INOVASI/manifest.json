@@ -1,0 +1,21 @@
+{
+  "short_name": "Pentaksiran PSV",
+  "name": "SISTEM PENTAKSIRAN KARYA MENGGAMBAR TAHAP 2",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#ffffff",
+  "theme_color": "#17324d",
+  "display": "standalone",
+  "orientation": "portrait"
+}
