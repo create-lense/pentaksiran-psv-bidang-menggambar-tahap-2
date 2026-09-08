@@ -8,7 +8,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CREATIVE.LENSE AI</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     :root {
       --ink: #17324d;
@@ -176,6 +175,9 @@
     .review-progress { height: 8px; border-radius: 99px; background: #e1e7e6; overflow: hidden; }
     .review-progress > div { height: 100%; border-radius: inherit; background: #155d58; transition: width .2s ease; }
     .notice-form { background: rgba(255, 250, 241, .9); }
+    .preset-info { border: 1px solid rgba(22, 78, 99, .16); border-radius: 16px; background: #eef6f5; padding: 1rem; }
+    .preset-info p { margin: .35rem 0; font-size: .9rem; }
+    .preset-info strong { color: var(--blue); }
     .ai-assist { border: 1px solid rgba(22, 78, 99, .18); border-radius: 16px; background: #eef6f5; padding: 1rem; }
     .teacher-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
     .teacher-filter { min-width: 0; }
@@ -311,13 +313,17 @@
         </section>
         <div class="grid grid-cols-1 gap-6 items-start">
           <section class="glass rounded-[26px] p-5 sm:p-7">
-            <section class="guide-card mb-6" aria-labelledby="ocr-title">
-              <p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(22, 93, 83);">Pilihan tambahan</p>
-              <h2 id="ocr-title" class="display-font text-2xl mt-1" style="color: rgb(23, 50, 77);">Imbas kad maklumat</h2>
-              <p class="text-sm text-gray-500 mt-2">Muat naik gambar kad tulisan tangan untuk mengisi beberapa medan secara automatik. Semak dan betulkan maklumat sebelum menghantar.</p>
-              <label class="label mt-4" for="inputGambarKad">Gambar kad maklumat</label>
-              <input id="inputGambarKad" class="input" type="file" accept="image/*">
-              <p id="statusOCR" class="text-sm mt-2" aria-live="polite"></p>
+            <section class="preset-info mb-6" aria-labelledby="preset-title">
+              <p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(22, 78, 99);">Tetapan tugasan guru</p>
+              <h2 id="preset-title" class="font-bold text-lg mt-1">Maklumat tugasan aktif</h2>
+              <p><strong>Sekolah:</strong> <span id="display-sekolah">-</span></p>
+              <p><strong>Guru Pentaksir:</strong> <span id="display-guru">-</span></p>
+              <p><strong>Jenis Karya:</strong> <span id="display-jenis-karya">-</span></p>
+              <p><strong>Teknik:</strong> <span id="display-teknik">-</span></p>
+              <p><strong>Media:</strong> <span id="display-media">-</span></p>
+              <p><strong>Bahan:</strong> <span id="display-bahan">-</span></p>
+              <p><strong>Unsur Seni:</strong> <span id="display-unsur">-</span></p>
+              <p><strong>Prinsip Rekaan:</strong> <span id="display-prinsip">-</span></p>
             </section>
             <form id="student-form">
               <div class="grid lg:grid-cols-2 gap-7">
@@ -462,6 +468,34 @@
             <button id="teacher-rubric-btn" class="btn shrink-0" type="button" style="background: rgb(242, 184, 75); color: rgb(23, 50, 77);">Lihat Rubrik</button>
           </div>
         </section>
+        <section id="ruang-guru-settings" class="glass rounded-[26px] p-5 sm:p-6 mb-6" aria-labelledby="guru-settings-title">
+          <p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(232, 93, 74);">Konfigurasi tugasan</p>
+          <h2 id="guru-settings-title" class="display-font text-3xl mt-2" style="color: rgb(23, 50, 77);">Tetapan Tugasan PSV</h2>
+          <form id="guru-settings-form" class="grid md:grid-cols-2 gap-4 mt-5">
+            <div><label class="label" for="guru-sekolah">Nama Sekolah</label><input class="input" type="text" id="guru-sekolah" placeholder="SK ..." required></div>
+            <div><label class="label" for="guru-nama">Nama Guru Pentaksir</label><input class="input" type="text" id="guru-nama" placeholder="Cikgu ..." required></div>
+            <div><label class="label" for="guru-jenis">Jenis Karya</label><input class="input" type="text" id="guru-jenis" placeholder="Contoh: Kolaj" required></div>
+            <div><label class="label" for="guru-media">Media</label><input class="input" type="text" id="guru-media" placeholder="Contoh: Warna poster" required></div>
+            <div><label class="label" for="guru-bahan">Bahan</label><input class="input" type="text" id="guru-bahan" placeholder="Contoh: Kertas warna, gam dan gunting" required></div>
+            <div><label class="label" for="guru-teknik">Teknik</label><input class="input" type="text" id="guru-teknik" placeholder="Contoh: Silang Pangkah / Arsiran" required></div>
+            <div><label class="label" for="guru-unsur">Unsur Seni</label><input class="input" type="text" id="guru-unsur" placeholder="Contoh: Garisan dan warna" required></div>
+            <div><label class="label" for="guru-prinsip">Prinsip Rekaan</label><input class="input" type="text" id="guru-prinsip" placeholder="Contoh: Imbangan dan harmoni" required></div>
+            <div class="md:col-span-2 grid sm:grid-cols-2 gap-3">
+              <button class="btn" type="submit" style="background: rgb(22, 78, 99); color: white;">Simpan &amp; Aktifkan Tugasan</button>
+              <button id="padam-tetapan-guru" class="btn" type="button" style="background: #d9534f; color: white;">Padam / Reset Tugasan</button>
+            </div>
+          </form>
+        </section>
+        <section class="glass rounded-[26px] p-5 sm:p-6 mb-6" aria-labelledby="teacher-school-check-title">
+          <p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(232, 93, 74);">Kawalan akses karya</p>
+          <h2 id="teacher-school-check-title" class="display-font text-3xl mt-2" style="color: rgb(23, 50, 77);">Semak Sekolah</h2>
+          <p class="text-sm text-gray-500 mt-2">Isi nama sekolah dan tekan Semak sebelum membuka senarai karya murid.</p>
+          <form id="teacher-school-check-form" class="flex flex-col sm:flex-row gap-3 mt-5">
+            <div class="flex-1"><label class="label" for="teacher-school-check">Nama Sekolah</label><input id="teacher-school-check" class="input" required placeholder="Contoh: SK BINUWOU TENGAH"></div>
+            <button class="btn sm:self-end" type="submit" style="background: rgb(22, 78, 99); color: white;">Semak</button>
+          </form>
+          <p id="teacher-school-check-message" class="text-sm mt-3" aria-live="polite"></p>
+        </section>
         <section class="notice-form rounded-[26px] p-5 sm:p-6 mb-6" aria-labelledby="teacher-notice-title">
           <p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(232, 93, 74);">Makluman untuk Murid</p>
           <h2 id="teacher-notice-title" class="display-font text-3xl sm:text-4xl mt-2" style="color: rgb(23, 50, 77);">Tulis notis laman utama</h2>
@@ -474,7 +508,7 @@
             </button>
           </form>
         </section>
-        <section class="glass rounded-[26px] p-5 sm:p-6 mb-6" aria-label="Tapis senarai karya">
+        <section id="teacher-record-filters" class="glass rounded-[26px] p-5 sm:p-6 mb-6 hidden" aria-label="Tapis senarai karya">
           <div class="teacher-filters">
             <div class="teacher-filter"><label class="label" for="filter-year">Tahun</label><select id="filter-year" class="input"><option value="">Semua tahun</option><option>Tahun 4</option><option>Tahun 5</option><option>Tahun 6</option></select></div>
             <div class="teacher-filter"><label class="label" for="filter-class">Kelas</label><input id="filter-class" class="input" placeholder="Contoh: 2 Bestari"></div>
@@ -482,7 +516,7 @@
             <div class="teacher-filter"><label class="label" for="filter-status">Status karya</label><select id="filter-status" class="input"><option value="">Semua status</option><option value="Dihantar">Belum dinilai</option><option value="Dinilai">Sudah dinilai</option></select></div>
           </div>
         </section>
-        <section class="performance-analysis rounded-[26px] p-5 sm:p-6 mb-6" aria-label="Analisis prestasi murid">
+        <section id="teacher-performance-analysis" class="performance-analysis rounded-[26px] p-5 sm:p-6 mb-6 hidden" aria-label="Analisis prestasi murid">
           <p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(232, 93, 74);">Analisis Prestasi Murid</p>
           <h2 class="display-font text-3xl sm:text-4xl mt-2" style="color: rgb(23, 50, 77);">Prestasi hasil karya mengikut aspek</h2>
           <p class="text-sm text-gray-500 mt-2 mb-5">Analisis ini menggunakan semua karya yang telah dinilai berdasarkan penapis sekolah dan kelas semasa.</p>
@@ -502,7 +536,7 @@
           <div id="aspect-analysis" class="aspect-grid"></div>
           <div id="analysis-message" class="mt-5 rounded-2xl bg-[#f2efe8] px-5 py-4 text-sm text-gray-500">Analisis akan dipaparkan selepas sekurang-kurangnya satu karya dinilai.</div>
         </section>
-        <div class="teacher-list grid xl:grid-cols-[350px_minmax(0,1fr)] gap-6 items-start mb-6">
+        <div id="teacher-record-list" class="teacher-list grid xl:grid-cols-[350px_minmax(0,1fr)] gap-6 items-start mb-6 hidden">
           <section class="glass rounded-[26px] p-5">
             <h2 class="display-font text-xl mb-4" style="color: rgb(23, 50, 77);">Senarai Karya</h2>
             <div id="record-list" class="space-y-3 max-h-[600px] overflow-y-auto"></div>
@@ -555,7 +589,7 @@
             </form>
           </section>
         </div>
-        <div id="analytics-grid" class="analytics-grid mb-6">
+        <div id="analytics-grid" class="analytics-grid mb-6 hidden">
           <section id="report-section" class="glass rounded-[26px] p-5 xl:col-span-2">
             <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
               <div>
@@ -662,6 +696,7 @@
     const DB_KEY = "artsense_offline_records";
     const PENDING_KEY = "pending_rekod_karya";
     const NOTICE_KEY = "artsense_offline_notice";
+    const TEACHER_PRESET_KEY = "psv_preset_tugasan";
     const SYNC_API_URL = "";
     const FIRESTORE_COLLECTION = "rekod_karya";
     const TEACHER_ACCESS_CODE = "GURU EDUTECH";
@@ -697,6 +732,88 @@
     }
     function saveRecords(data) {
       localStorage.setItem(DB_KEY, JSON.stringify(data));
+    }
+
+    function muatTetapanKeRuangMurid() {
+      let data;
+      try { data = JSON.parse(localStorage.getItem(TEACHER_PRESET_KEY) || "null"); }
+      catch(error) { data = null; }
+
+      $("display-sekolah").textContent = data?.sekolah || "-";
+      $("display-guru").textContent = data?.guru || "-";
+      $("display-jenis-karya").textContent = data?.jenis || "-";
+      $("display-teknik").textContent = data?.teknik || "-";
+      $("display-media").textContent = data?.media || "-";
+      $("display-bahan").textContent = data?.bahan || data?.media || "-";
+      $("display-unsur").textContent = data?.unsur || "-";
+      $("display-prinsip").textContent = data?.prinsip || data?.unsur || "-";
+
+      const presetFields = {
+        "student-school": data?.sekolah || "",
+        "student-teacher": data?.guru || "",
+        "art-type": data?.jenis || "",
+        "art-media": data?.media || "",
+        "art-materials": data?.bahan || data?.media || "",
+        "art-technique": data?.teknik || "",
+        "art-elements": data?.unsur || "",
+        "art-principles": data?.prinsip || data?.unsur || ""
+      };
+      Object.entries(presetFields).forEach(([id, value]) => {
+        const field = $(id);
+        if(field) field.value = value;
+      });
+    }
+
+    function simpanTetapanGuru() {
+      const form = $("guru-settings-form");
+      if(!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      const presetData = {
+        sekolah: $("guru-sekolah").value.trim(),
+        guru: $("guru-nama").value.trim(),
+        jenis: $("guru-jenis").value.trim(),
+        media: $("guru-media").value.trim(),
+        bahan: $("guru-bahan").value.trim(),
+        teknik: $("guru-teknik").value.trim(),
+        unsur: $("guru-unsur").value.trim(),
+        prinsip: $("guru-prinsip").value.trim()
+      };
+      localStorage.setItem(TEACHER_PRESET_KEY, JSON.stringify(presetData));
+      teacherSchoolVerified = false;
+      verifiedTeacherSchool = "";
+      $("teacher-school-check").value = presetData.sekolah;
+      $("teacher-school-check-message").textContent = "Tetapan sekolah berubah. Tekan Semak untuk membuka data sekolah ini.";
+      $("teacher-school-check-message").style.color = "#80570b";
+      setTeacherDataVisibility(false);
+      muatTetapanKeRuangMurid();
+      toast("Tetapan tugasan berjaya disimpan dan diaktifkan.");
+    }
+
+    function padamTetapanGuru() {
+      if(!confirm("Adakah anda pasti ingin memadam tetapan tugasan ini?")) return;
+      localStorage.removeItem(TEACHER_PRESET_KEY);
+      teacherSchoolVerified = false;
+      verifiedTeacherSchool = "";
+      ["guru-sekolah", "guru-nama", "guru-jenis", "guru-media", "guru-bahan", "guru-teknik", "guru-unsur", "guru-prinsip"].forEach(id => {
+        if($(id)) $(id).value = "";
+      });
+      $("teacher-school-check").value = "";
+      $("teacher-school-check-message").textContent = "Tetapan dipadam. Isi dan semak sekolah untuk membuka data.";
+      $("teacher-school-check-message").style.color = "#80570b";
+      setTeacherDataVisibility(false);
+      muatTetapanKeRuangMurid();
+      toast("Tetapan tugasan telah dipadam. Sila buat tetapan baharu jika perlu.");
+    }
+
+    function muatBorangTetapanGuru() {
+      let data;
+      try { data = JSON.parse(localStorage.getItem(TEACHER_PRESET_KEY) || "null"); }
+      catch(error) { data = null; }
+      if(!data) return;
+      const fields = { "guru-sekolah": data.sekolah, "guru-nama": data.guru, "guru-jenis": data.jenis, "guru-media": data.media, "guru-bahan": data.bahan, "guru-teknik": data.teknik, "guru-unsur": data.unsur, "guru-prinsip": data.prinsip, "teacher-school-check": data.sekolah };
+      Object.entries(fields).forEach(([id, value]) => { if($(id)) $(id).value = value || ""; });
     }
 
     function getPendingRecords() {
@@ -799,7 +916,8 @@
     }
 
     async function loadSyncedRecords() {
-      if(await loadCloudRecords()) {
+      const school = teacherSchoolVerified ? $("teacher-school-check").value.trim() : "";
+      if(await loadCloudRecords(school)) {
         if($('teacher-page') && !$('teacher-page').classList.contains('hidden')) renderTeacher();
         return;
       }
@@ -811,7 +929,7 @@
         if(!Array.isArray(payload.records)) throw new Error("Respons API bukan senarai rekod.");
         const localRecords = getRecords();
         const mergedRecords = new Map(localRecords.map(record => [String(record.id), record]));
-        payload.records.forEach(record => {
+        payload.records.filter(record => !school || normaliseSchool(record.sekolah) === normaliseSchool(school)).forEach(record => {
           mergedRecords.set(String(record.id), { ...mergedRecords.get(String(record.id)), ...record });
         });
         records = [...mergedRecords.values()];
@@ -837,12 +955,13 @@
       }
     }
 
-    async function loadCloudRecords() {
+    async function loadCloudRecords(school = "") {
       if(typeof db === "undefined" || !navigator.onLine) return false;
       try {
-        const snapshot = await db.collection(FIRESTORE_COLLECTION).get();
+        const collection = db.collection(FIRESTORE_COLLECTION);
+        const snapshot = school ? await collection.where("sekolah", "==", school).get() : await collection.get();
         const data = snapshot.docs.map(document => ({ id: document.id, ...document.data() }));
-        const localRecords = getRecords();
+        const localRecords = getRecords().filter(record => !school || normaliseSchool(record.sekolah) === normaliseSchool(school));
         const mergedRecords = new Map(localRecords.map(record => [String(record.id), record]));
         data.forEach(record => {
           const normalizedRecord = { ...record, apresiasi_kendiri: record.apresiasi_kendiri || record.refleksi || "" };
@@ -878,110 +997,54 @@
       })[character]);
     }
 
-    async function processStudentCard(event) {
-      const file = event.target.files[0];
-      const status = $("statusOCR");
-      if(!file) return;
-      if(!window.Tesseract) {
-        status.textContent = "OCR tidak tersedia. Sila isi borang secara manual.";
-        return;
-      }
-      status.textContent = "Sedang membaca kad maklumat. Sila tunggu...";
-      let worker;
-      try {
-        worker = await Tesseract.createWorker("msa+eng", 1, {
-          logger: message => {
-            if(message.status === "recognizing text") status.textContent = `Membaca kad: ${Math.round(message.progress * 100)}%`;
-          }
-        });
-        const result = await worker.recognize(file);
-        isiMedanBorang(result.data.text);
-        status.textContent = "Maklumat berjaya dibaca. Sila semak dan betulkan sebelum menghantar.";
-      } catch(error) {
-        status.textContent = "Kad tidak dapat dibaca dengan jelas. Sila isi borang secara manual.";
-      } finally {
-        if(worker) await worker.terminate();
-      }
-    }
-
-    function isiMedanBorang(text) {
-      const bersihTeks = text.replace(/[*=_+|~`#]/g, " ");
-      const lines = bersihTeks.split("\n");
-      lines.forEach(line => {
-        const baris = line.trim();
-        if(!baris) return;
-
-        function isiInput(ids, nilai) {
-          if(!nilai) return;
-          const valBersih = nilai.replace(/^[^\w\s]+|[^\w\s]+$/g, "").trim();
-          if(!valBersih || valBersih.length < 2) return;
-          for(const id of ids) {
-            const el = document.getElementById(id);
-            if(el) {
-              el.value = valBersih;
-              el.dispatchEvent(new Event("input", { bubbles: true }));
-              el.dispatchEvent(new Event("change", { bubbles: true }));
-              break;
-            }
-          }
-        }
-
-        function nilaiSelepasLabel(labelPattern) {
-          return baris.replace(labelPattern, "").replace(/^\s*[:\-]\s*/, "").trim();
-        }
-
-        if(/nama|murid|pelajar/i.test(baris) && !/apresiasi|kendiri|cikgu|guru|sekolah/i.test(baris)) {
-          const val = baris.replace(/^(nama|murid|pelajar|nama\s*murid|nama\s*pelajar)\s*[:\-]/i, "").trim();
-          isiInput(["student-name", "nama_murid", "namaMurid", "namaPelajar", "nama_pelajar"], val);
-        }
-        if(/kelas/i.test(baris) && !/jenis|tajuk/i.test(baris)) {
-          isiInput(["student-class", "kelas"], baris.replace(/^kelas\s*[:\-]/i, "").trim());
-        }
-        if(/sekolah|sk\b|smk\b/i.test(baris) && !/tajuk|jenis/i.test(baris)) {
-          isiInput(["student-school", "sekolah", "namaSekolah"], baris.replace(/^sekolah\s*[:\-]/i, "").trim());
-        }
-        if(/cikgu|guru/i.test(baris)) {
-          const val = baris.replace(/^(nama\s*cikgu|nama\s*guru|cikgu|guru)\s*[:\-]/i, "").trim();
-          isiInput(["student-teacher", "nama_guru", "namaGuru", "namaCikgu", "nama_cikgu"], val);
-        }
-        if(/jenis/i.test(baris)) {
-          const val = baris.replace(/^jenis\s*(karya)?\s*[:\-]/i, "").trim();
-          isiInput(["art-type", "jenis_karya", "jenisKarya"], val);
-        }
-        if(/tajuk/i.test(baris)) {
-          const val = baris.replace(/^tajuk\s*(karya)?\s*[:\-]/i, "").trim();
-          isiInput(["art-name", "tajuk_karya", "tajukKarya", "tajuk"], val);
-        }
-        if(/media/i.test(baris)) isiInput(["art-media", "media"], baris.replace(/^media\s*[:\-]/i, "").trim());
-        if(/bahan/i.test(baris)) isiInput(["art-materials", "bahan"], baris.replace(/^bahan\s*[:\-]/i, "").trim());
-        if(/teknik/i.test(baris)) isiInput(["art-technique", "teknik"], baris.replace(/^teknik\s*[:\-]/i, "").trim());
-        if(/unsur\s*seni|unsur/i.test(baris)) {
-          const val = baris.replace(/^unsur\s*(seni)?\s*[:\-]/i, "").trim();
-          isiInput(["art-elements", "unsur_seni", "unsurSeni", "unsur"], val);
-        }
-        if(/prinsip\s*rekaan|prinsip/i.test(baris)) {
-          const val = baris.replace(/^prinsip\s*(rekaan)?\s*[:\-]/i, "").trim();
-          isiInput(["art-principles", "prinsip_rekaan", "prinsipRekaan", "prinsip"], val);
-        }
-        if(/apresiasi|kendiri|refleksi|ulasan/i.test(baris)) {
-          const val = baris.replace(/^(apresiasi\s*kendiri|apresiasi|refleksi|ulasan)\s*[:\-]/i, "").trim();
-          isiInput(["reflection", "apresiasi_kendiri", "apresiasiKendiri", "apresiasi", "refleksi"], val);
-        }
-      });
-    }
-
     let records = getRecords();
     let selectedIndex = null;
     let teacherAuthenticated = false;
+    let teacherSchoolVerified = false;
+    let verifiedTeacherSchool = "";
     $("home-notice-message").textContent = localStorage.getItem(NOTICE_KEY) || "Keputusan penilaian boleh disemak melalui laman murid.";
+
+    function normaliseSchool(value) {
+      return String(value || "").trim().toLocaleLowerCase("ms-MY").replace(/\s+/g, " ");
+    }
+
+    function setTeacherDataVisibility(isVisible) {
+      ["teacher-record-filters", "teacher-performance-analysis", "teacher-record-list", "analytics-grid"].forEach(id => {
+        $(id).classList.toggle("hidden", !isVisible);
+      });
+    }
+
+    async function semakSekolahGuru(event) {
+      event.preventDefault();
+      const school = $("teacher-school-check").value.trim();
+      const message = $("teacher-school-check-message");
+      if(!school) {
+        teacherSchoolVerified = false;
+        verifiedTeacherSchool = "";
+        setTeacherDataVisibility(false);
+        message.textContent = "Sila isi nama sekolah terlebih dahulu.";
+        message.style.color = "#a83224";
+        return;
+      }
+
+      teacherSchoolVerified = true;
+      verifiedTeacherSchool = normaliseSchool(school);
+      selectedIndex = null;
+      setTeacherDataVisibility(true);
+      message.textContent = `Akses dibuka untuk ${school}. Hanya karya sekolah ini dipaparkan.`;
+      message.style.color = "#166534";
+      renderTeacher();
+      await loadSyncedRecords();
+    }
 
     // NAVIGASI
     function showPage(name) {
       Object.entries(pages).forEach(([k, p]) => p.classList.toggle("hidden", k !== name));
       Object.entries(nav).forEach(([k, b]) => b.setAttribute("aria-current", k === name ? "page" : "false"));
       if(name === "teacher") {
+        setTeacherDataVisibility(teacherSchoolVerified);
         renderTeacher();
-        loadSyncedRecords();
+        if(teacherSchoolVerified) loadSyncedRecords();
       }
       if(name === "gallery") renderGallery();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1034,7 +1097,6 @@
     $("print-report").onclick = () => window.print();
     $("filter-year").onchange = renderTeacher;
     $("filter-status").onchange = renderTeacher;
-    $("inputGambarKad").addEventListener("change", processStudentCard);
     $("filter-class").oninput = renderTeacher;
     $("filter-student").onchange = renderTeacher;
     if($("report-year")) $("report-year").onchange = renderTeacher;
@@ -1052,7 +1114,15 @@
       $("home-notice-message").textContent = notice;
       toast("Notis berjaya disimpan.");
     };
+    $("guru-settings-form").onsubmit = event => {
+      event.preventDefault();
+      simpanTetapanGuru();
+    };
+    $("teacher-school-check-form").onsubmit = semakSekolahGuru;
+    $("padam-tetapan-guru").onclick = padamTetapanGuru;
     $("teacher-notice").value = localStorage.getItem(NOTICE_KEY) || "";
+    muatBorangTetapanGuru();
+    muatTetapanKeRuangMurid();
 
     function getFilteredRecords() {
       const yearFilter = $("filter-year").value;
@@ -1060,6 +1130,7 @@
       const studentFilter = $("filter-student").value;
       const statusFilter = $("filter-status").value;
       return getRecords().filter(record =>
+        (!verifiedTeacherSchool || normaliseSchool(record.sekolah) === verifiedTeacherSchool) &&
         (!yearFilter || record.tahun === yearFilter) &&
         (!classFilter || String(record.kelas || "").toLowerCase().includes(classFilter)) &&
         (!studentFilter || `${record.nama_murid} | ${record.sekolah}` === studentFilter) &&
@@ -1070,7 +1141,11 @@
     function getReportRecords() {
       const year = $("report-year").value;
       const className = $("report-class").value.trim().toLowerCase();
-      return getRecords().filter(record => (!year || record.tahun === year) && (!className || String(record.kelas || "").toLowerCase().includes(className)));
+      return getRecords().filter(record =>
+        (!verifiedTeacherSchool || normaliseSchool(record.sekolah) === verifiedTeacherSchool) &&
+        (!year || record.tahun === year) &&
+        (!className || String(record.kelas || "").toLowerCase().includes(className))
+      );
     }
 
     function downloadReport() {
@@ -1384,11 +1459,7 @@
     $("teacher-rubric-btn").onclick = openRubric;
     $("ai-assist-btn").onclick = generateAIAssessment;
     $("self-assessment-btn").onclick = generateSelfAssessment;
-    $("clear-student-form").onclick = () => {
-      $("student-form").reset();
-      $("student-error").classList.add("hidden");
-      $("self-assessment-panel").classList.add("hidden");
-    };
+    $("clear-student-form").onclick = kosongkanInputMurid;
     window.addEventListener("online", updateAIAvailability);
     window.addEventListener("offline", updateAIAvailability);
     window.addEventListener("online", updateSelfAssessmentAvailability);
@@ -1407,6 +1478,17 @@
     });
 
     // HANTAR FORM MURID
+    function kosongkanInputMurid() {
+      ["student-name", "student-year", "student-class", "art-name", "reflection"].forEach(id => {
+        const field = $(id);
+        if(field) field.value = "";
+      });
+      $("art-image").value = "";
+      $("student-error").classList.add("hidden");
+      $("self-assessment-panel").classList.add("hidden");
+      muatTetapanKeRuangMurid();
+    }
+
     $("student-form").onsubmit = async (e) => {
       e.preventDefault();
       const error = $("student-error");
@@ -1454,11 +1536,7 @@
 
       records.push(newRecord);
       saveRecords(records);
-      $("student-form").reset();
-      $("inputGambarKad").value = "";
-      $("statusOCR").textContent = "";
-      $("statusOCR").style.display = "none";
-      $("self-assessment-panel").classList.add("hidden");
+      kosongkanInputMurid();
       const synced = await syncRecord(newRecord);
       toast(synced ? "Karya berjaya dihantar dan disegerakkan." : "Karya disimpan pada peranti. Penyegerakan akan dicuba semula apabila sambungan tersedia.", synced ? "success" : "error");
     };
@@ -1502,9 +1580,15 @@
     // PAPARAN RUANG GURU
     function renderTeacher() {
       const list = $("record-list"); list.innerHTML = "";
+      if(!teacherSchoolVerified) {
+        $("record-count").textContent = "Semak sekolah dahulu";
+        list.innerHTML = `<p class="text-gray-500 text-sm text-center py-4">Isi dan semak nama sekolah untuk melihat karya murid.</p>`;
+        return;
+      }
       records = getRecords();
+      const schoolRecords = records.filter(record => normaliseSchool(record.sekolah) === verifiedTeacherSchool);
       const selectedStudent = $("filter-student").value;
-      const students = [...new Set(records.map(record => `${record.nama_murid} | ${record.sekolah}`))].sort((a, b) => a.localeCompare(b, "ms"));
+      const students = [...new Set(schoolRecords.map(record => `${record.nama_murid} | ${record.sekolah}`))].sort((a, b) => a.localeCompare(b, "ms"));
       $("filter-student").innerHTML = `<option value="">Semua murid</option>${students.map(student => `<option value="${escapeHTML(student)}">${escapeHTML(student.replace(" | ", " - "))}</option>`).join("")}`;
       $("filter-student").value = students.includes(selectedStudent) ? selectedStudent : "";
       const yearFilter = $("filter-year").value;
@@ -1512,6 +1596,7 @@
       const studentFilter = $("filter-student").value;
       const statusFilter = $("filter-status").value;
       const visibleRecords = records.map((record, index) => ({ record, index })).filter(({ record }) =>
+        normaliseSchool(record.sekolah) === verifiedTeacherSchool &&
         (!yearFilter || record.tahun === yearFilter) &&
         (!classFilter || String(record.kelas || "").toLowerCase().includes(classFilter)) &&
         (!studentFilter || `${record.nama_murid} | ${record.sekolah}` === studentFilter) &&
