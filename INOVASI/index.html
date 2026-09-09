@@ -699,7 +699,20 @@
     const TEACHER_PRESET_KEY = "psv_preset_tugasan";
     const SYNC_API_URL = "";
     const FIRESTORE_COLLECTION = "rekod_karya";
-    const TEACHER_ACCESS_CODE = "GURU EDUTECH";
+    const SCHOOL_ACCESS = {
+      gurusatu: { sekolah: "SK BINUWOU TENGAH", kod: "GURUSATU" },
+      gurudua: { sekolah: "SK BUNANG", kod: "GURUDUA" },
+      gurutiga: { sekolah: "SK ST JAMES", kod: "GURUTIGA" }
+    };
+    let activeTeacherSchool = "";
+
+    function getActivePresetKey() {
+      return activeTeacherSchool ? `${TEACHER_PRESET_KEY}_${activeTeacherSchool}` : TEACHER_PRESET_KEY;
+    }
+
+    function getActiveSchool() {
+      return SCHOOL_ACCESS[activeTeacherSchool] || null;
+    }
     const artworkChoices = {
       Lukisan: {
         media: ["Pensel (H/B/2B-6B)", "Pensel warna", "Arang (Charcoal)", "Pen penanda (Marker)", "Pastel kapur / minyak"],
@@ -736,7 +749,7 @@
 
     function muatTetapanKeRuangMurid() {
       let data;
-      try { data = JSON.parse(localStorage.getItem(TEACHER_PRESET_KEY) || "null"); }
+      try { data = JSON.parse(localStorage.getItem(getActivePresetKey()) || localStorage.getItem(TEACHER_PRESET_KEY) || "null"); }
       catch(error) { data = null; }
 
       $("display-sekolah").textContent = data?.sekolah || "-";
@@ -771,7 +784,7 @@
         return;
       }
       const presetData = {
-        sekolah: $("guru-sekolah").value.trim(),
+        sekolah: getActiveSchool()?.sekolah || $("guru-sekolah").value.trim(),
         guru: $("guru-nama").value.trim(),
         jenis: $("guru-jenis").value.trim(),
         media: $("guru-media").value.trim(),
@@ -780,7 +793,7 @@
         unsur: $("guru-unsur").value.trim(),
         prinsip: $("guru-prinsip").value.trim()
       };
-      localStorage.setItem(TEACHER_PRESET_KEY, JSON.stringify(presetData));
+      localStorage.setItem(getActivePresetKey(), JSON.stringify(presetData));
       teacherSchoolVerified = false;
       verifiedTeacherSchool = "";
       $("teacher-school-check").value = presetData.sekolah;
@@ -793,7 +806,7 @@
 
     function padamTetapanGuru() {
       if(!confirm("Adakah anda pasti ingin memadam tetapan tugasan ini?")) return;
-      localStorage.removeItem(TEACHER_PRESET_KEY);
+      localStorage.removeItem(getActivePresetKey());
       teacherSchoolVerified = false;
       verifiedTeacherSchool = "";
       ["guru-sekolah", "guru-nama", "guru-jenis", "guru-media", "guru-bahan", "guru-teknik", "guru-unsur", "guru-prinsip"].forEach(id => {
@@ -809,7 +822,7 @@
 
     function muatBorangTetapanGuru() {
       let data;
-      try { data = JSON.parse(localStorage.getItem(TEACHER_PRESET_KEY) || "null"); }
+      try { data = JSON.parse(localStorage.getItem(getActivePresetKey()) || localStorage.getItem(TEACHER_PRESET_KEY) || "null"); }
       catch(error) { data = null; }
       if(!data) return;
       const fields = { "guru-sekolah": data.sekolah, "guru-nama": data.guru, "guru-jenis": data.jenis, "guru-media": data.media, "guru-bahan": data.bahan, "guru-teknik": data.teknik, "guru-unsur": data.unsur, "guru-prinsip": data.prinsip, "teacher-school-check": data.sekolah };
@@ -1017,12 +1030,21 @@
     async function semakSekolahGuru(event) {
       event.preventDefault();
       const school = $("teacher-school-check").value.trim();
+      const activeSchool = getActiveSchool();
       const message = $("teacher-school-check-message");
       if(!school) {
         teacherSchoolVerified = false;
         verifiedTeacherSchool = "";
         setTeacherDataVisibility(false);
         message.textContent = "Sila isi nama sekolah terlebih dahulu.";
+        message.style.color = "#a83224";
+        return;
+      }
+      if(activeSchool && normaliseSchool(school) !== normaliseSchool(activeSchool.sekolah)) {
+        teacherSchoolVerified = false;
+        verifiedTeacherSchool = "";
+        setTeacherDataVisibility(false);
+        message.textContent = `Kod akses ini hanya untuk ${activeSchool.sekolah}.`;
         message.style.color = "#a83224";
         return;
       }
@@ -1051,10 +1073,6 @@
     }
 
     function requestTeacherAccess() {
-      if(teacherAuthenticated) {
-        showPage("teacher");
-        return;
-      }
       $("teacher-access-modal").classList.remove("hidden");
       $("teacher-access-code").value = "";
       $("teacher-access-error").classList.add("hidden");
@@ -1075,11 +1093,19 @@
     $("brand-home").onclick = () => showPage("home");
     $("teacher-access-form").onsubmit = event => {
       event.preventDefault();
-      if($("teacher-access-code").value.trim().toUpperCase() !== TEACHER_ACCESS_CODE) {
+      const access = Object.entries(SCHOOL_ACCESS).find(([, school]) => school.kod === $("teacher-access-code").value.trim().toUpperCase());
+      if(!access) {
         $("teacher-access-error").classList.remove("hidden");
         $("teacher-access-code").select();
         return;
       }
+      activeTeacherSchool = access[0];
+      teacherSchoolVerified = false;
+      verifiedTeacherSchool = "";
+      selectedIndex = null;
+      $("teacher-school-check").value = access[1].sekolah;
+      muatBorangTetapanGuru();
+      muatTetapanKeRuangMurid();
       teacherAuthenticated = true;
       closeTeacherAccess();
       showPage("teacher");
