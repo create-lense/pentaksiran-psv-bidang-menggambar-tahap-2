@@ -398,9 +398,15 @@
                       <label class="label" for="art-image">Gambar Karya *</label>
                       <input id="art-image" class="input" type="file" accept="image/*" required>
                     </div>
-                    <div>
-                      <label class="label" for="reflection">Apresiasi Kendiri *</label>
-                      <textarea id="reflection" class="input min-h-[118px]" required placeholder="Terangkan idea, penggunaan warna dan proses menghasilkan karya ini..."></textarea>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mt-4 space-y-3">
+                      <div class="flex items-center justify-between gap-3">
+                        <label class="label !mb-0" for="reflection">Apresiasi Kendiri &amp; Refleksi Murid *</label>
+                        <span class="text-xs bg-indigo-100 text-indigo-700 font-medium px-2.5 py-0.5 rounded-full">Bantuan Templat</span>
+                      </div>
+                      <p class="text-xs text-slate-500">Isi ruang bergaris dalam perenggan di bawah. Kemudian tekan butang untuk menjana refleksi lengkap.</p>
+                      <p class="text-sm leading-relaxed text-slate-700">Dalam menghasilkan karya ini, saya menggunakan media <input id="ref_media" class="border-0 border-b-2 border-indigo-400 bg-transparent px-1 py-0.5 text-indigo-700 font-medium focus:outline-none focus:border-indigo-600" placeholder="media" aria-label="Media karya"> dengan teknik <input id="ref_teknik" class="border-0 border-b-2 border-indigo-400 bg-transparent px-1 py-0.5 text-indigo-700 font-medium focus:outline-none focus:border-indigo-600" placeholder="teknik" aria-label="Teknik karya">. Unsur seni yang paling menonjol ialah <input id="ref_unsur" class="border-0 border-b-2 border-indigo-400 bg-transparent px-1 py-0.5 text-indigo-700 font-medium focus:outline-none focus:border-indigo-600" placeholder="unsur seni" aria-label="Unsur seni"> kerana menjadikan karya saya <input id="ref_kesan" class="border-0 border-b-2 border-indigo-400 bg-transparent px-1 py-0.5 text-indigo-700 font-medium focus:outline-none focus:border-indigo-600" placeholder="kesan karya" aria-label="Kesan karya">. Cabaran utama saya ialah <input id="ref_cabaran" class="border-0 border-b-2 border-indigo-400 bg-transparent px-1 py-0.5 text-indigo-700 font-medium focus:outline-none focus:border-indigo-600" placeholder="cabaran" aria-label="Cabaran karya">, namun saya berjaya mengatasinya. Secara keseluruhannya, saya berasa <input id="ref_perasaan" class="border-0 border-b-2 border-indigo-400 bg-transparent px-1 py-0.5 text-indigo-700 font-medium focus:outline-none focus:border-indigo-600" placeholder="perasaan" aria-label="Perasaan terhadap karya"> dengan hasil karya ini.</p>
+                      <button id="guided-reflection-btn" type="button" class="btn w-full !rounded-lg !py-2" style="background:#4f46e5;color:white;"><span>Jana Teks Refleksi Automatik</span></button>
+                      <div><label class="label text-xs" for="reflection">Hasil Refleksi Lengkap:</label><textarea id="reflection" class="input min-h-[118px]" required placeholder="Ayat refleksi akan dipaparkan di sini..."></textarea></div>
                     </div>
                   </div>
                 </div>
@@ -606,11 +612,14 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z"/><path d="M18 12h.01"/></svg>
                 <span>Cetak / Simpan Laporan</span>
               </button>
+              <button id="delete-report-all" class="btn shrink-0" type="button" style="background: #eef1f2; color: #a83224;">
+                <span>Padam Laporan</span>
+              </button>
               </div>
             </div>
             <div class="report-table-wrap mt-6">
               <table class="report-table">
-                <thead><tr><th>Bil.</th><th>Murid</th><th>Tahun / Kelas</th><th>Gambar</th><th>Tajuk karya</th><th>Jenis</th><th>Markah</th><th>Tahap</th><th>Ulasan untuk murid</th><th>Aktiviti susulan</th><th>Tarikh nilai</th></tr></thead>
+                <thead><tr><th>Bil.</th><th>Murid</th><th>Tahun / Kelas</th><th>Gambar</th><th>Tajuk karya</th><th>Jenis</th><th>Markah</th><th>Tahap</th><th>Ulasan untuk murid</th><th>Aktiviti susulan</th><th>Tarikh nilai</th><th>Tindakan</th></tr></thead>
                 <tbody id="report-table-body"></tbody>
               </table>
             </div>
@@ -928,6 +937,15 @@
       return hantarKaryaMurid(record);
     }
 
+    async function simpanAtauQueue(record) {
+      if (await saveCloudRecord(record)) {
+        removePendingRecord(record.id);
+        return true;
+      }
+      queuePendingRecord(record);
+      return false;
+    }
+
     async function loadSyncedRecords() {
       const school = teacherSchoolVerified ? $("teacher-school-check").value.trim() : "";
       if(await loadCloudRecords(school)) {
@@ -1011,7 +1029,7 @@
     }
 
     let records = getRecords();
-    let selectedIndex = null;
+    let selectedRecordId = null;
     let teacherAuthenticated = false;
     let teacherSchoolVerified = false;
     let verifiedTeacherSchool = "";
@@ -1051,7 +1069,7 @@
 
       teacherSchoolVerified = true;
       verifiedTeacherSchool = normaliseSchool(school);
-      selectedIndex = null;
+      selectedRecordId = null;
       setTeacherDataVisibility(true);
       message.textContent = `Akses dibuka untuk ${school}. Hanya karya sekolah ini dipaparkan.`;
       message.style.color = "#166534";
@@ -1102,7 +1120,7 @@
       activeTeacherSchool = access[0];
       teacherSchoolVerified = false;
       verifiedTeacherSchool = "";
-      selectedIndex = null;
+      selectedRecordId = null;
       $("teacher-school-check").value = access[1].sekolah;
       muatBorangTetapanGuru();
       muatTetapanKeRuangMurid();
@@ -1121,6 +1139,7 @@
       if(event.key === "Escape") closeRubric();
     });
     $("print-report").onclick = () => window.print();
+    $("delete-report-all").onclick = deleteFilteredReports;
     $("filter-year").onchange = renderTeacher;
     $("filter-status").onchange = renderTeacher;
     $("filter-class").oninput = renderTeacher;
@@ -1128,6 +1147,87 @@
     if($("report-year")) $("report-year").onchange = renderTeacher;
     if($("report-class")) $("report-class").oninput = renderTeacher;
     $("delete-record").onclick = deleteSelectedRecord;
+    $("student-form").onsubmit = async event => {
+      event.preventDefault();
+      const form = $("student-form");
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      const imageFile = $("art-image").files[0];
+      const imageData = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => resolve("");
+        reader.readAsDataURL(imageFile);
+      });
+      const record = {
+        id: globalThis.crypto?.randomUUID ? crypto.randomUUID() : `karya-${Date.now()}`,
+        nama_murid: $("student-name").value.trim(),
+        tahun: $("student-year").value,
+        kelas: $("student-class").value.trim(),
+        sekolah: $("student-school").value.trim(),
+        guru: $("student-teacher").value.trim(),
+        jenis_karya: $("art-type").value.trim(),
+        tajuk_karya: $("art-name").value.trim(),
+        media: $("art-media").value.trim(),
+        bahan: $("art-materials").value.trim(),
+        teknik: $("art-technique").value.trim(),
+        unsur_seni: $("art-elements").value.trim(),
+        prinsip_rekaan: $("art-principles").value.trim(),
+        apresiasi_kendiri: $("reflection").value.trim(),
+        gambar_karya: imageData,
+        status: "Dihantar",
+        tarikh: new Date().toISOString()
+      };
+      records = [...records, record];
+      saveRecords(records);
+      const synced = await syncRecord(record);
+      toast(synced ? "Karya berjaya dihantar kepada guru." : "Karya disimpan. Ia akan dihantar apabila sambungan tersedia.");
+      form.reset();
+      $("self-assessment-panel").classList.add("hidden");
+    };
+    $("assessment-form").onsubmit = async event => {
+      event.preventDefault();
+      const targetRecord = getSelectedRecord();
+      if(!targetRecord) {
+        toast("Sila pilih karya murid dahulu.", "error");
+        return;
+      }
+      if(!$("assessment-form").checkValidity()) {
+        $("assessment-form").reportValidity();
+        return;
+      }
+
+      const values = kemaskiniJumlahMarkah();
+      const updatedRecord = {
+        ...targetRecord,
+        status: "Dinilai",
+        rubric_scores: {
+          persepsi_visual: values.m1,
+          aplikasi_seni: values.m2,
+          ekspresi_kreatif: values.m3,
+          apresiasi_seni: values.m4,
+          sikap_sahsiah: values.m5
+        },
+        total_score: values.jumlah,
+        tp: values.tp,
+        ulasan_guru: $("teacher-review").value.trim(),
+        aktiviti_susulan: $("followup").value.trim(),
+        tarikh_dinilai: new Date().toISOString()
+      };
+
+      records = records.map(record => String(record.id) === String(updatedRecord.id) ? updatedRecord : record);
+      saveRecords(records);
+      renderTeacher();
+      toast("Penilaian berjaya disimpan. Rekod kekal di laman guru.");
+
+      if(await saveCloudRecord(updatedRecord)) {
+        removePendingRecord(updatedRecord.id);
+      } else {
+        queuePendingRecord(updatedRecord);
+      }
+    };
     $("notice-form").onsubmit = event => {
       event.preventDefault();
       const notice = $("teacher-notice").value.trim();
@@ -1171,11 +1271,11 @@
         (!verifiedTeacherSchool || normaliseSchool(record.sekolah) === verifiedTeacherSchool) &&
         (!year || record.tahun === year) &&
         (!className || String(record.kelas || "").toLowerCase().includes(className))
-      );
+      ).sort((left, right) => String(left.nama_murid || "").localeCompare(String(right.nama_murid || ""), "ms", { sensitivity: "base" }));
     }
 
     function downloadReport() {
-      const assessed = getFilteredRecords().filter(record => record.status === "Dinilai");
+      const assessed = getReportRecords().filter(record => record.status === "Dinilai");
       if(!assessed.length) {
         toast("Tiada karya yang telah dinilai untuk dimuat turun.", "error");
         return;
@@ -1293,37 +1393,148 @@
     }
     kemaskiniJumlahMarkah();
 
-    function janaAnalisisAI() {
-      const { m1, m2, jumlah, tp } = kemaskiniJumlahMarkah();
-      const record = selectedIndex === null ? {} : records[selectedIndex] || {};
-      const getValue = (ids, recordKeys, fallback) => ids.map(id => document.getElementById(id)?.value.trim()).find(Boolean) || recordKeys.map(key => String(record[key] || "").trim()).find(Boolean) || fallback;
-      const namaMurid = getValue(["nama_murid", "student-name"], ["nama_murid"], "Murid");
-      const tajukKarya = getValue(["tajuk_karya", "art-name"], ["tajuk_karya"], "karya ini");
-      const media = getValue(["media", "art-media"], ["media"], "media seni");
-      const teknik = getValue(["teknik", "art-technique"], ["teknik"], "teknik pilihan");
-      const unsurSeni = getValue(["unsur_seni", "art-elements"], ["unsur_seni"], "unsur seni");
-      const prinsipRekaan = getValue(["prinsip_rekaan", "art-principles"], ["prinsip_rekaan"], "prinsip rekaan");
-      let ulasanGuru = `Syabas ${namaMurid}! Cikgu amat menghargai usaha kamu dalam menghasilkan "${tajukKarya}". `;
-      if(m1 >= 16) ulasanGuru += `Aplikasi ${unsurSeni} dan ${prinsipRekaan} digarap dengan sangat tepat dan menarik. `;
-      else if(m1 >= 8) ulasanGuru += `Penggunaan ${unsurSeni} sudah baik, cuma boleh dipertingkatkan dari segi susunan ${prinsipRekaan}. `;
-      else ulasanGuru += `Perlu lebih bimbingan untuk memahami dan mengaplikasikan ${unsurSeni} pada karya. `;
-      if(m2 >= 18) ulasanGuru += `Penguasaan ${media} dan teknik ${teknik} dilihat sangat kemas serta mantap. `;
-      else if(m2 >= 9) ulasanGuru += `Penggunaan ${media} mengikut teknik ${teknik} berjalan lancar, teruskan latihan untuk hasil lebih rata. `;
-      else ulasanGuru += `Boleh tingkatkan lagi kemahiran kawalan ${media} dan aplikasi teknik ${teknik}. `;
-      ulasanGuru += `Pencapaian keseluruhan kamu ialah ${jumlah} markah (${tp}). Teruskan minat dan usaha ini!`;
-      const aktivitiSusulan = jumlah >= 76
-        ? `Sediakan sudut pameran kecil atau bantu rakan sekelas dengan berkongsi teknik ${teknik} yang kamu gunakan.`
-        : jumlah >= 41
-          ? `Lakukan aktiviti pengukuhan bagi teknik ${teknik} dan bereksperimen dengan pencampuran warna ${media}.`
-          : `Bimbingan asas secara berpandu bersama guru untuk mengukuhkan teknik ${teknik} dan pemahaman ${unsurSeni}.`;
-      const review = document.getElementById("ulasan_guru") || document.getElementById("teacher-review");
-      const followup = document.getElementById("cadangan_aktiviti") || document.getElementById("followup");
-      if(review) review.value = ulasanGuru;
-      if(followup) followup.value = aktivitiSusulan;
-      const reflection = document.getElementById("apresiasi_kendiri") || document.getElementById("reflection");
-      if(reflection) reflection.value = `Karya bertajuk "${tajukKarya}" ini dihasilkan dengan ${media} menggunakan teknik ${teknik}. Gabungan ${unsurSeni} dan ${prinsipRekaan} diaplikasikan mengikut kebolehan saya. Berdasarkan penilaian semula, pencapaian karya ini memperoleh skor ${jumlah} (${tp}).`;
-      return { ulasanGuru, aktivitiSusulan, jumlah, tp };
+    function getArtworkContext(record = {}) {
+      const getValue = (ids, recordKeys, fallback) => recordKeys.map(key => String(record[key] || "").trim()).find(Boolean) || ids.map(id => document.getElementById(id)?.value.trim()).find(Boolean) || fallback;
+      return {
+        namaMurid: getValue(["nama_murid", "student-name"], ["nama_murid"], "Murid"),
+        tajukKarya: getValue(["tajuk_karya", "art-name"], ["tajuk_karya"], "karya ini"),
+        jenisKarya: getValue(["jenis_karya", "art-type"], ["jenis_karya"], "karya seni"),
+        media: getValue(["media", "art-media"], ["media"], "media seni"),
+        bahan: getValue(["bahan", "art-materials"], ["bahan"], "bahan yang dipilih"),
+        teknik: getValue(["teknik", "art-technique"], ["teknik"], "teknik pilihan"),
+        unsurSeni: getValue(["unsur_seni", "art-elements"], ["unsur_seni"], "unsur seni"),
+        prinsipRekaan: getValue(["prinsip_rekaan", "art-principles"], ["prinsip_rekaan"], "prinsip rekaan"),
+        reflection: getValue(["apresiasi_kendiri", "reflection"], ["apresiasi_kendiri"], "")
+      };
     }
+
+    function janaTemplatApresiasi() {
+      const media = $("ref_media")?.value.trim() || $("art-media")?.value.trim() || "media pilihan";
+      const teknik = $("ref_teknik")?.value.trim() || $("art-technique")?.value.trim() || "teknik yang dipelajari";
+      const unsur = $("ref_unsur")?.value.trim() || "pengolahan unsur seni yang menarik";
+      const kesan = $("ref_kesan")?.value.trim() || "kelihatan lebih hidup dan berstruktur";
+      const cabaran = $("ref_cabaran")?.value.trim() || "menghasilkan karya dengan kemas";
+      const perasaan = $("ref_perasaan")?.value.trim() || "amat bangga dan puas hati";
+      const reflection = $("reflection");
+      if (reflection) {
+        reflection.value = `Dalam menghasilkan karya ini, saya telah menggunakan media ${media} dengan teknik ${teknik}. Unsur seni yang paling menonjol ialah ${unsur} yang menjadikan hasil karya ${kesan}. Cabaran utama yang saya hadapi ialah ${cabaran}, namun saya berjaya mengatasinya. Secara keseluruhannya, saya berasa ${perasaan} dengan hasil karya ini.`;
+        reflection.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    }
+
+    function stableArtworkSeed(artwork) {
+      const source = Object.values(artwork).join("|").toLocaleLowerCase("ms-MY");
+      return [...source].reduce((hash, character) => ((hash * 31) + character.charCodeAt(0)) >>> 0, 7);
+    }
+
+   // =========================================================
+// INTEGRASI GOOGLE GEMINI (Sedia Digunakan)
+// =========================================================
+
+function getGeminiApiKey() {
+  return localStorage.getItem("gemini_api_key") || "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";
+}
+
+function requestOpenRouterKey() {
+  const key = window.prompt("Masukkan API key OpenRouter. Key disimpan pada peranti ini dan tidak dipaparkan dalam halaman:");
+  const trimmedKey = String(key || "").trim();
+  if (!trimmedKey) return "";
+  localStorage.setItem("gemini_api_key", trimmedKey);
+  return trimmedKey;
+}
+
+function loadGeminiKey() {
+  const key = getGeminiApiKey();
+
+  if (typeof updateAIAvailability === "function") {
+    updateAIAvailability();
+  }
+}
+
+async function analisisKaryaDenganGemini(karyaData, base64Image) {
+  const apiKey = getGeminiApiKey() || requestOpenRouterKey();
+  if (!apiKey || apiKey.includes("MASUKKAN_KEY")) {
+    throw new Error("Sila masukkan API key OpenRouter yang sah.");
+  }
+  if (!base64Image) {
+    throw new Error("Gambar karya diperlukan untuk analisis AI vision.");
+  }
+
+  const url = "https://openrouter.ai/api/v1/chat/completions";
+
+  const promptText = `Anda ialah Guru Pentaksir Pendidikan Seni Visual (PSV) Sekolah Rendah.
+Analisis gambar lukisan murid dan maklumat berikut:
+- Nama: ${karyaData.nama || 'Murid'}
+- Tajuk: ${karyaData.tajuk || 'Karya Seni'}
+- Markah: ${karyaData.markah}/100 (${karyaData.tp})
+Rubrik markah maksimum: Persepsi Visual 20, Aplikasi Seni 25, Ekspresi Kreatif 30, Apresiasi Seni 15, Sikap dan Sahsiah 10. Berikan markah berdasarkan bukti gambar, refleksi dan maklumat karya; markah setiap murid mesti boleh berbeza.
+
+Nilai gambar dengan rubrik PSV berikut dan berikan markah yang berbeza mengikut bukti visual karya. Jangan gunakan markah lalai yang sama untuk semua murid. TP biasanya minimum TP3 (jumlah 41 ke atas), tetapi gunakan TP1 atau TP2 jika karya jelas tidak siap atau tidak menepati rubrik.
+
+Sila berikan maklum balas dalam FORMAT JSON SAHAJA:
+{
+  "markah_aspek": {
+    "persepsi_visual": 0,
+    "aplikasi_seni": 0,
+    "ekspresi_kreatif": 0,
+    "apresiasi_seni": 0,
+    "sikap_sahsiah": 0
+  },
+  "jumlah_markah": 0,
+  "tp": "TP1",
+  "ulasan": "Pujian mesra bermula dengan 'Syabas ${karyaData.nama || 'Murid'}!'. Ulas secara mendalam tentang elemen visual lukisan seperti susunan subjek, pengolahan warna, dan kekemasan.",
+  "aktiviti_susulan": "1 cadangan amali praktikal untuk penambahbaikan karya murid."
+}`;
+
+  const contentPayload = [{ type: "text", text: promptText }];
+
+  if (base64Image) {
+    const formattedImage = base64Image.startsWith("data:") 
+      ? base64Image 
+      : `data:image/jpeg;base64,${base64Image}`;
+      
+    contentPayload.push({
+      type: "image_url",
+      image_url: { url: formattedImage }
+    });
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey.trim()}`,
+      "HTTP-Referer": window.location.origin || "http://localhost",
+      "X-Title": "PSV Grading PWA"
+    },
+    body: JSON.stringify({
+      model: "openrouter/free",
+      messages: [{ role: "user", content: contentPayload }],
+      temperature: 0.7
+    })
+  });
+
+  if (!response.ok) {
+    let errData;
+    try { errData = await response.json(); }
+    catch(error) { errData = { error: { message: response.statusText } }; }
+    throw new Error(`OpenRouter Error (${response.status}): ${errData.error?.message || JSON.stringify(errData)}`);
+  }
+
+  const data = await response.json();
+  let rawText = data.choices?.[0]?.message?.content;
+  if (Array.isArray(rawText)) rawText = rawText.map(part => part.text || "").join("");
+  if (!rawText) throw new Error("Respons OpenRouter tidak mengandungi kandungan analisis.");
+
+  if (rawText.includes("```json")) {
+    rawText = rawText.split("```json")[1].split("```")[0].trim();
+  } else if (rawText.includes("```")) {
+    rawText = rawText.split("```")[1].split("```")[0].trim();
+  }
+
+  try { return JSON.parse(rawText); }
+  catch(error) { throw new Error("Respons OpenRouter bukan JSON yang sah."); }
+}
 
     function openRubric() {
       $("rubric-modal").classList.remove("hidden");
@@ -1334,566 +1545,319 @@
       $("rubric-modal").classList.add("hidden");
     }
 
-    async function analyzeArtworkImage(imageData) {
-      if(!imageData) return { colorfulness: 0, contrast: 0, brightness: 0.5, detail: 0, balance: 0, neatness: 0 };
-      return new Promise(resolve => {
-        const image = new Image();
-        image.onload = () => {
-          const canvas = document.createElement("canvas");
-          const size = 48;
-          canvas.width = size; canvas.height = size;
-          const context = canvas.getContext("2d", { willReadFrequently: true });
-          context.drawImage(image, 0, 0, size, size);
-          const pixels = context.getImageData(0, 0, size, size).data;
-          let brightness = 0, colorfulness = 0, contrast = 0, detail = 0, previous = null;
-          const quadrantBrightness = [0, 0, 0, 0];
-          const quadrantCounts = [0, 0, 0, 0];
-          for(let index = 0; index < pixels.length; index += 4) {
-            const pixelIndex = index / 4;
-            const x = pixelIndex % size;
-            const y = Math.floor(pixelIndex / size);
-            const quadrant = (y >= size / 2 ? 2 : 0) + (x >= size / 2 ? 1 : 0);
-            const red = pixels[index], green = pixels[index + 1], blue = pixels[index + 2];
-            const lightness = (red + green + blue) / 765;
-            brightness += lightness;
-            quadrantBrightness[quadrant] += lightness;
-            quadrantCounts[quadrant] += 1;
-            colorfulness += (Math.max(red, green, blue) - Math.min(red, green, blue)) / 255;
-            if(previous !== null) { contrast += Math.abs(lightness - previous); detail += Math.min(1, Math.abs(lightness - previous) * 4); }
-            previous = lightness;
-          }
-          const count = pixels.length / 4;
-          const averageQuadrant = quadrantBrightness.map((total, index) => total / quadrantCounts[index]);
-          const balance = 1 - Math.min(1, (Math.abs(averageQuadrant[0] - averageQuadrant[3]) + Math.abs(averageQuadrant[1] - averageQuadrant[2])) / 2);
-          const averageContrast = contrast / (count - 1);
-          resolve({ brightness: brightness / count, colorfulness: colorfulness / count, contrast: averageContrast, detail: detail / (count - 1), balance, neatness: Math.max(0, 1 - averageContrast * 2) });
-        };
-        image.onerror = () => resolve({ colorfulness: 0, contrast: 0, brightness: 0.5, detail: 0, balance: 0, neatness: 0 });
-        image.src = imageData;
-      });
-    }
-
-    function getSuggestedScores(imageFeatures) {
-      const detailBoost = Math.min(0.16, imageFeatures.detail * 0.16);
-      const colorBoost = Math.min(0.14, imageFeatures.colorfulness * 0.28);
-      const contrastBoost = Math.min(0.12, imageFeatures.contrast * 0.35);
-      const balanceBoost = Math.min(0.1, imageFeatures.balance * 0.1);
-      return rubric.reduce((scores, item) => {
-        let ratio = 0.38 + detailBoost;
-        if(item.key === "persepsi_visual") ratio += contrastBoost + balanceBoost;
-        if(item.key === "aplikasi_seni") ratio += detailBoost + imageFeatures.neatness * 0.08;
-        if(item.key === "ekspresi_kreatif") ratio += detailBoost + colorBoost + balanceBoost;
-        if(item.key === "apresiasi_seni") ratio += balanceBoost;
-        if(item.key === "sikap_sahsiah") ratio += imageFeatures.neatness * 0.12;
-        ratio = Math.min(0.96, ratio);
-        scores[item.key] = Math.max(1, Math.round(item.max * ratio));
-        return scores;
-      }, {});
-    }
-
-    function getFeedback(scores, imageFeatures) {
-      const weakest = rubric.reduce((current, item) => scores[item.key] / item.max < scores[current.key] / current.max ? item : current, rubric[0]);
-      const visualEvidence = imageFeatures.colorfulness < 0.22 ? "Warna kelihatan agak terhad" : "Warna menunjukkan variasi yang baik";
-      const principleEvidence = imageFeatures.balance > 0.65 ? "imbangan gubahan kelihatan agak stabil" : "imbangan ruang masih boleh diperkemas";
-      const suggestions = {
-        persepsi_visual: `Perkemas penggunaan unsur seni dan prinsip rekaan untuk menguatkan idea karya; ${principleEvidence}.`,
-        aplikasi_seni: "Perincikan penggunaan media, bahan dan teknik pada bahagian utama supaya hasil lebih terkawal.",
-        ekspresi_kreatif: `Perkemas pengolahan idea dan komposisi supaya fokus karya lebih jelas; ${principleEvidence}.`,
-        apresiasi_seni: "Jelaskan refleksi kendiri dengan menyatakan pilihan idea, kekuatan karya dan perkara yang boleh ditambah baik.",
-        sikap_sahsiah: "Kemaskan tepi, sapuan dan ruang kosong karya. Pastikan karya bersih, lengkap dan menunjukkan komitmen."
-      };
-      const activities = {
-        persepsi_visual: "Kenal pasti unsur seni dan prinsip rekaan utama pada karya, kemudian jelaskan fungsinya.",
-        aplikasi_seni: "Uji media, bahan dan teknik pada kertas kecil, kemudian pilih kaedah yang paling sesuai dengan idea.",
-        ekspresi_kreatif: "Buat dua lakaran susunan untuk menguji pengolahan idea, komposisi dan fokus sebelum menyiapkan karya.",
-        apresiasi_seni: "Tulis refleksi kendiri tentang idea, kekuatan karya dan satu perkara yang boleh ditambah baik.",
-        sikap_sahsiah: "Gunakan senarai semak karya: tepi kemas, permukaan bersih, hasil lengkap dan tugasan disiapkan dengan komitmen."
-      };
-      const criteriaSummary = rubric.map(item => item.label).join(", ");
-      return { review: `Tahniah, karya ini menunjukkan usaha dan idea yang baik. Penilaian berdasarkan lima kriteria rubrik (${criteriaSummary}). Aspek yang boleh diperkemas ialah ${weakest.label.toLowerCase()}. ${suggestions[weakest.key]}`, followup: activities[weakest.key], weakest: weakest.label };
-    }
-
-    function getTahapLabel(score) {
-      return getPerformanceLevel(score);
-    }
-
-    function updateSelfAssessmentAvailability() {
-      const available = navigator.onLine;
-      $("self-assessment-btn").disabled = !available;
-      $("self-assessment-btn").title = available ? "Jana cadangan penilaian kendiri dengan AI" : "Tiada internet. Penilaian guru dibuat secara manual.";
-    }
-
-    async function generateSelfAssessment() {
-      const form = $("student-form");
-      $("student-error").classList.add("hidden");
-      if(!navigator.onLine) {
-        toast("Tiada internet. Penilaian kendiri AI tidak tersedia.", "error");
-        return;
+    function applyAIAspectScores(aspectScores) {
+      if (!aspectScores || typeof aspectScores !== "object") {
+        throw new Error("AI vision tidak mengembalikan markah rubrik.");
       }
-      if(!form.checkValidity()) {
-        $("student-error").textContent = "Lengkapkan maklumat karya dahulu untuk menjalankan penilaian kendiri.";
-        $("student-error").classList.remove("hidden");
+      rubric.forEach((item, index) => {
+        const rawScore = Number(aspectScores[item.key]);
+        if (!Number.isFinite(rawScore)) throw new Error(`Markah aspek ${item.label} tidak sah.`);
+        const score = Math.max(0, Math.min(item.max, Math.round(rawScore)));
+        const slider = $(`rubric-in-${index}`);
+        if (slider) slider.value = score;
+        const label = $(`score-val-${index}`);
+        if (label) label.textContent = `${score} / ${item.max}`;
+      });
+      return kemaskiniJumlahMarkah();
+    }
+
+    async function janaAnalisisAI() {
+      const aiStatus = $("ai-status");
+      try {
+        if (aiStatus) aiStatus.textContent = "Sedang menjana analisis AI...";
+
+        const values = kemaskiniJumlahMarkah();
+        const record = selectedRecordId === null ? {} : records.find(item => String(item.id) === String(selectedRecordId)) || {};
+        const artwork = getArtworkContext(record);
+
+        const aiResult = await analisisKaryaDenganGemini({
+          nama: artwork.namaMurid,
+          tajuk: artwork.tajukKarya,
+          jenis: artwork.jenisKarya,
+          media: artwork.media,
+          bahan: artwork.bahan,
+          teknik: artwork.teknik,
+          unsurSeni: artwork.unsurSeni,
+          prinsipRekaan: artwork.prinsipRekaan,
+          markah: values.jumlah,
+          tp: values.tp
+        }, record.gambar_karya);
+
+        if (!aiResult?.ulasan) throw new Error("AI vision tidak mengembalikan ulasan.");
+        const scoredValues = applyAIAspectScores(aiResult.markah_aspek);
+        if ($("teacher-review")) $("teacher-review").value = aiResult.ulasan;
+        if ($("followup")) $("followup").value = aiResult.aktiviti_susulan || "";
+
+        if (aiStatus) aiStatus.textContent = `Analisis berjaya: ${scoredValues.jumlah} markah (${scoredValues.tp}). Sila semak sebelum simpan.`;
+        toast(`Markah AI berjaya dimasukkan: ${scoredValues.jumlah}/100 (${scoredValues.tp}).`);
+      } catch (error) {
+        console.error("Ralat analisis AI:", error);
+        const message = error?.message || "Ralat tidak diketahui.";
+        if (aiStatus) aiStatus.textContent = `Gagal: ${message}`;
+        toast(`Gagal menjana analisis AI: ${message}`, "error");
+      }
+    }
+
+    async function janaPenilaianKendiriAI() {
+      const form = $("student-form");
+      if (!form.checkValidity()) {
         form.reportValidity();
         return;
       }
       const imageFile = $("art-image").files[0];
-      const imageData = imageFile ? await new Promise(resolve => {
+      if (!imageFile) {
+        toast("Sila pilih gambar karya dahulu.", "error");
+        return;
+      }
+      const imageData = await new Promise(resolve => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
         reader.onerror = () => resolve("");
         reader.readAsDataURL(imageFile);
-      }) : "";
-      const imageFeatures = await analyzeArtworkImage(imageData);
-      const scores = getSuggestedScores(imageFeatures);
-      const total = Object.values(scores).reduce((sum, score) => sum + score, 0);
-      const feedback = getFeedback(scores, imageFeatures);
-      $("self-score-title").textContent = getTahapLabel(total);
-      $("self-score-badge").textContent = total;
-      $("self-score-details").innerHTML = rubric.map(item => `<div class="self-score-card"><strong>${item.label}</strong><p>${scores[item.key]} / ${item.max}</p></div>`).join("");
-      $("self-suggestion-text").textContent = `${feedback.review} Aktiviti susulan: ${feedback.followup}`;
-      const reflection = document.getElementById("reflection");
-      if(reflection && !reflection.value.trim()) {
-        const getValue = (ids, fallback) => ids.map(id => document.getElementById(id)?.value.trim()).find(Boolean) || fallback;
-        const tajukKarya = getValue(["tajuk_karya", "art-name"], "karya ini");
-        const media = getValue(["media", "art-media"], "media seni");
-        const teknik = getValue(["teknik", "art-technique"], "teknik pilihan");
-        const unsurSeni = getValue(["unsur_seni", "art-elements"], "unsur seni");
-        const prinsipRekaan = getValue(["prinsip_rekaan", "art-principles"], "prinsip rekaan");
-        reflection.value = `Karya bertajuk "${tajukKarya}" ini dihasilkan menggunakan ${media} dengan ${teknik}. Saya telah mengaplikasikan ${unsurSeni} serta ${prinsipRekaan} bagi mewujudkan kesan visual yang seimbang. Penilaian kendiri ini menunjukkan pencapaian skor ${total} (${getTahapLabel(total)}) berdasarkan penguasaan media dan kekemasan karya saya.`;
-      }
-      $("self-assessment-panel").classList.remove("hidden");
-      toast("Penilaian kendiri berjaya dijana.");
-    }
-
-    function updateAIAvailability() {
-      const available = navigator.onLine && selectedIndex !== null;
-      $("ai-assist-btn").disabled = !available;
-      $("ai-status").textContent = navigator.onLine ? (selectedIndex === null ? "Pilih karya dahulu untuk mendapatkan cadangan." : "Sambungan tersedia. Cadangan AI boleh digunakan.") : "Tiada internet. Gunakan penilaian manual melalui slider dan ruangan ulasan.";
-    }
-
-    async function generateAIAssessment() {
-      if(!navigator.onLine || selectedIndex === null) {
-        toast("Tiada internet. Sila beri penilaian secara manual.", "error");
-        return;
-      }
-      janaAnalisisAI();
-      $("ai-status").textContent = "Cadangan AI telah diisi. Sila semak dan ubah sebelum menyimpan.";
-      toast("Cadangan AI berjaya dijana.");
-    }
-
-    $("student-rubric-btn").onclick = openRubric;
-    $("teacher-rubric-btn").onclick = openRubric;
-    $("ai-assist-btn").onclick = generateAIAssessment;
-    $("self-assessment-btn").onclick = generateSelfAssessment;
-    $("clear-student-form").onclick = kosongkanInputMurid;
-    window.addEventListener("online", updateAIAvailability);
-    window.addEventListener("offline", updateAIAvailability);
-    window.addEventListener("online", updateSelfAssessmentAvailability);
-    window.addEventListener("offline", updateSelfAssessmentAvailability);
-    window.addEventListener("online", () => { kemaskiniStatusPendingUI(); hantarSemulaDataPending(); });
-    window.addEventListener("offline", kemaskiniStatusPendingUI);
-    $("sync-pending-btn").onclick = hantarSemulaDataPending;
-    kemaskiniStatusPendingUI();
-    updateSelfAssessmentAvailability();
-    $("close-rubric").onclick = closeRubric;
-    $("rubric-modal").onclick = event => {
-      if(event.target === $("rubric-modal")) closeRubric();
-    };
-    document.addEventListener("keydown", event => {
-      if(event.key === "Escape") closeRubric();
-    });
-
-    // HANTAR FORM MURID
-    function kosongkanInputMurid() {
-      ["student-name", "student-year", "student-class", "art-name", "reflection"].forEach(id => {
-        const field = $(id);
-        if(field) field.value = "";
       });
-      $("art-image").value = "";
-      $("student-error").classList.add("hidden");
-      $("self-assessment-panel").classList.add("hidden");
-      muatTetapanKeRuangMurid();
-    }
-
-    $("student-form").onsubmit = async (e) => {
-      e.preventDefault();
-      const error = $("student-error");
-      error.classList.add("hidden");
-      if(!e.currentTarget.checkValidity()) {
-        error.textContent = "Sila lengkapkan semua maklumat wajib sebelum menghantar karya.";
-        error.classList.remove("hidden");
-        e.currentTarget.reportValidity();
+      if (!imageData) {
+        toast("Gambar karya tidak dapat dibaca.", "error");
         return;
       }
-      const imageFile = $("art-image").files[0];
-      let imageData = "";
+
+      const button = $("self-assessment-btn");
+      button.disabled = true;
+      const artwork = getArtworkContext();
       try {
-        imageData = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(imageFile);
+        const aiResult = await analisisKaryaDenganGemini({
+          nama: artwork.namaMurid,
+          tajuk: artwork.tajukKarya,
+          jenis: artwork.jenisKarya,
+          media: artwork.media,
+          bahan: artwork.bahan,
+          teknik: artwork.teknik,
+          unsurSeni: artwork.unsurSeni,
+          prinsipRekaan: artwork.prinsipRekaan,
+          markah: "belum dinilai",
+          tp: "akan ditentukan oleh AI"
+        }, imageData);
+        const scoreValues = rubric.map(item => {
+          const score = Number(aiResult.markah_aspek?.[item.key]);
+          return Number.isFinite(score) ? Math.max(0, Math.min(item.max, Math.round(score))) : 0;
         });
-      } catch(readError) {
-        error.textContent = "Gambar karya tidak dapat dibaca. Sila cuba lagi.";
-        error.classList.remove("hidden");
-        return;
+        const total = scoreValues.reduce((sum, score) => sum + score, 0);
+        const tp = getPerformanceLevel(total);
+        $("self-score-title").textContent = `${tp} · ${total} / 100`;
+        $("self-score-badge").textContent = total;
+        $("self-score-details").innerHTML = rubric.map((item, index) => `<div class="self-score-card"><strong>${escapeHTML(item.label)}</strong><p>${scoreValues[index]} / ${item.max}</p></div>`).join("");
+        $("self-suggestion-text").textContent = `${aiResult.ulasan || "Analisis AI berjaya dijana."} Aktiviti susulan: ${aiResult.aktiviti_susulan || "Teruskan memperkemas karya."}`;
+        $("self-assessment-panel").classList.remove("hidden");
+        toast(`Penilaian kendiri AI berjaya: ${total}/100 (${tp}).`);
+      } catch (error) {
+        toast(`Penilaian kendiri AI gagal: ${error.message}`, "error");
+      } finally {
+        button.disabled = false;
       }
-
-      const newRecord = {
-        id: Date.now(),
-        nama_murid: $("student-name").value.trim(),
-        tahun: $("student-year").value,
-        kelas: $("student-class").value.trim(),
-        sekolah: $("student-school").value.trim(),
-        nama_guru: $("student-teacher").value.trim(),
-        jenis_karya: $("art-type").value,
-        tajuk_karya: $("art-name").value.trim(),
-        media: $("art-media").value.trim(),
-        bahan: $("art-materials").value.trim(),
-        teknik: $("art-technique").value.trim(),
-        unsur_seni: $("art-elements").value.trim(),
-        prinsip_rekaan: $("art-principles").value.trim(),
-        gambar_karya: imageData,
-        apresiasi_kendiri: $("reflection").value.trim(),
-        status: "Dihantar",
-        tarikh: new Date().toLocaleDateString("ms-MY")
-      };
-
-      records.push(newRecord);
-      saveRecords(records);
-      kosongkanInputMurid();
-      const synced = await syncRecord(newRecord);
-      toast(synced ? "Karya berjaya dihantar dan disegerakkan." : "Karya disimpan pada peranti. Penyegerakan akan dicuba semula apabila sambungan tersedia.", synced ? "success" : "error");
-    };
-
-    // SEMAK KEPUTUSAN MURID
-    $("result-form").onsubmit = async (e) => {
-      e.preventDefault();
-      const name = $("result-name").value.trim().toLocaleLowerCase("ms-MY");
-      const school = $("result-school").value.trim().toLocaleLowerCase("ms-MY");
-      await loadCloudRecords();
-      records = getRecords();
-      const matchingRecords = records.filter(r => String(r.nama_murid || "").trim().toLocaleLowerCase("ms-MY") === name && String(r.sekolah || "").trim().toLocaleLowerCase("ms-MY") === school);
-      const assessedRecords = matchingRecords.filter(r => r.status === "Dinilai");
-
-      const msg = $("result-message");
-      msg.classList.remove("hidden");
-      if(!matchingRecords.length) {
-        msg.className = "error mt-4"; msg.textContent = "Rekod karya tidak ditemui.";
-      } else if(!assessedRecords.length) {
-        msg.className = "p-4 bg-yellow-100 text-yellow-800 rounded-xl mt-4"; msg.textContent = "Karya telah diterima, belum dinilai oleh guru.";
-      } else {
-        msg.className = "student-results-print p-4 bg-white border rounded-xl mt-4 text-left text-sm";
-        msg.innerHTML = `
-          <div class="flex items-start justify-between gap-3 mb-4">
-            <div><p class="uppercase tracking-[.16em] font-bold text-xs" style="color: rgb(232, 93, 74);">Keputusan Penilaian</p><h3 class="display-font text-2xl mt-1 text-[#17324d]">${escapeHTML(assessedRecords[0].nama_murid)}</h3><p class="text-gray-500 mt-1">${escapeHTML(assessedRecords[0].sekolah)}</p></div>
-            <button class="result-print-action btn shrink-0" type="button" style="background: rgb(22, 78, 99); color: white;" onclick="printStudentResults()">Cetak / Simpan</button>
-          </div>
-          <div class="student-result-table-wrap"><table class="student-result-table"><thead><tr><th>Bil.</th><th>Gambar</th><th>Tajuk karya</th><th>Jenis</th><th>Media</th><th>Bahan</th><th>Teknik</th><th>Markah</th><th>Tahap</th><th>Ulasan untuk murid</th><th>Aktiviti susulan</th><th>Tarikh nilai</th></tr></thead><tbody>
-          ${assessedRecords.map((record, index) => `<tr><td>${index + 1}</td><td>${record.gambar_karya ? `<img class="art-thumb" src="${escapeHTML(record.gambar_karya)}" alt="Karya ${escapeHTML(record.nama_murid)}">` : "-"}</td><td>${escapeHTML(record.tajuk_karya)}</td><td>${escapeHTML(record.jenis_karya)}</td><td>${escapeHTML(record.media || "-")}</td><td>${escapeHTML(record.bahan || "-")}</td><td>${escapeHTML(record.teknik || "-")}</td><td>${escapeHTML(record.unsur_seni || "-")}</td><td>${escapeHTML(record.prinsip_rekaan || "-")}</td><td><strong>${escapeHTML(record.total_score)} / 100</strong></td><td>${getPerformanceLevel(record.total_score)}</td><td>${escapeHTML(record.ulasan_guru || "Tiada ulasan")}</td><td>${escapeHTML(record.aktiviti_susulan || "Tiada")}</td><td>${escapeHTML(record.tarikh_dinilai || record.tarikh || "-")}</td></tr>`).join("")}
-          </tbody></table></div>
-        `;
-      }
-    };
-
-    function printStudentResults() {
-      document.body.classList.add("printing-student-results");
-      window.print();
-      setTimeout(() => document.body.classList.remove("printing-student-results"), 500);
     }
 
-    // PAPARAN RUANG GURU
-    function renderTeacher() {
-      const list = $("record-list"); list.innerHTML = "";
-      if(!teacherSchoolVerified) {
-        $("record-count").textContent = "Semak sekolah dahulu";
-        list.innerHTML = `<p class="text-gray-500 text-sm text-center py-4">Isi dan semak nama sekolah untuk melihat karya murid.</p>`;
-        return;
-      }
-      records = getRecords();
-      const schoolRecords = records.filter(record => normaliseSchool(record.sekolah) === verifiedTeacherSchool);
-      const selectedStudent = $("filter-student").value;
-      const students = [...new Set(schoolRecords.map(record => `${record.nama_murid} | ${record.sekolah}`))].sort((a, b) => a.localeCompare(b, "ms"));
-      $("filter-student").innerHTML = `<option value="">Semua murid</option>${students.map(student => `<option value="${escapeHTML(student)}">${escapeHTML(student.replace(" | ", " - "))}</option>`).join("")}`;
-      $("filter-student").value = students.includes(selectedStudent) ? selectedStudent : "";
-      const yearFilter = $("filter-year").value;
-      const classFilter = $("filter-class").value.trim().toLowerCase();
-      const studentFilter = $("filter-student").value;
-      const statusFilter = $("filter-status").value;
-      const visibleRecords = records.map((record, index) => ({ record, index })).filter(({ record }) =>
-        normaliseSchool(record.sekolah) === verifiedTeacherSchool &&
-        (!yearFilter || record.tahun === yearFilter) &&
-        (!classFilter || String(record.kelas || "").toLowerCase().includes(classFilter)) &&
-        (!studentFilter || `${record.nama_murid} | ${record.sekolah}` === studentFilter) &&
-        (!statusFilter || record.status === statusFilter)
-      );
-      $("record-count").textContent = `${visibleRecords.length} / ${records.length} Karya`;
-      renderAnalytics(visibleRecords.map(({ record }) => record));
-
-      if(visibleRecords.length === 0) {
-        list.innerHTML = `<p class="text-gray-500 text-sm text-center py-4">Tiada karya sepadan dengan tapisan.</p>`;
-        return;
-      }
-
-      visibleRecords.forEach(({ record: rec, index: idx }) => {
-        const btn = document.createElement("button");
-        btn.className = `record ${selectedIndex === idx ? 'selected' : ''}`;
-        btn.innerHTML = `
-          <div class="flex justify-between items-start">
-            <div>
-              <p class="font-bold text-sm">${escapeHTML(rec.nama_murid)}</p>
-              <p class="text-xs text-gray-500">${escapeHTML(rec.tahun)} (${escapeHTML(rec.kelas)}) - ${escapeHTML(rec.sekolah)}</p>
-            </div>
-            <span class="pill ${rec.status === 'Dinilai' ? 'done' : 'pending'}">${escapeHTML(rec.status)}</span>
-          </div>
-          <h4 class="font-semibold text-base mt-2 text-[#164e63]">${escapeHTML(rec.tajuk_karya)}</h4>
-        `;
-        btn.onclick = () => selectRecord(idx);
-        list.appendChild(btn);
-      });
-    }
-
-    async function deleteSelectedRecord() {
-      if(selectedIndex === null || !records[selectedIndex]) return;
-      const record = records[selectedIndex];
-      if(!confirm(`Padam rekod karya "${record.tajuk_karya}" untuk ${record.nama_murid}?`)) return;
-      const deletedFromCloud = await deleteCloudRecord(record.id);
-      if(navigator.onLine && !deletedFromCloud) {
-        toast("Rekod tidak dapat dipadam daripada Firebase. Cuba lagi.", "error");
-        return;
-      }
-      records.splice(selectedIndex, 1);
-      saveRecords(records);
-      selectedIndex = null;
-      $("assessment-form").classList.add("hidden");
-      $("assessment-empty").classList.remove("hidden");
-      renderTeacher();
-      toast("Rekod karya berjaya dipadam.");
-    }
-
-    function renderAnalytics(filteredRecords = records) {
-      const assessed = filteredRecords.filter(record => record.status === "Dinilai");
-      const pending = filteredRecords.length - assessed.length;
-      const average = assessed.length ? assessed.reduce((sum, record) => sum + Number(record.total_score || 0), 0) / assessed.length : 0;
-      $("stat-assessed").textContent = assessed.length;
-      $("stat-average").textContent = assessed.length ? `${average.toFixed(1)} / 100` : "-";
-      $("stat-action").textContent = pending ? "Menunggu penilaian" : assessed.length ? "Semua dinilai" : "Menunggu penilaian";
-      const progress = records.length ? Math.round((assessed.length / records.length) * 100) : 0;
-      $("review-pending").textContent = pending;
-      $("review-assessed").textContent = assessed.length;
-      $("review-progress-label").textContent = `${progress}%`;
-      $("review-progress-bar").style.width = `${progress}%`;
-
-      const aspectAnalysis = $("aspect-analysis");
-      aspectAnalysis.innerHTML = rubric.map(item => {
-        const scores = assessed.map(record => record.rubric_scores?.[item.key]).filter(score => Number.isFinite(Number(score)));
-        const aspectAverage = scores.length ? scores.reduce((sum, score) => sum + Number(score), 0) / scores.length : 0;
-        const percentage = scores.length ? (aspectAverage / item.max) * 100 : 0;
-        return `<div class="aspect-card"><p class="font-semibold text-sm">${item.label}</p><p class="display-font text-xl mt-3">${scores.length ? aspectAverage.toFixed(1) : "-"}<span class="text-sm"> / ${item.max}</span></p><div class="aspect-track"><div class="aspect-fill" style="width: ${percentage}%"></div></div></div>`;
-      }).join("");
-      $("analysis-message").textContent = assessed.length ? "Analisis dikemas kini berdasarkan semua karya yang telah dinilai." : "Analisis akan dipaparkan selepas sekurang-kurangnya satu karya dinilai.";
-
-      const grouped = new Map();
-      filteredRecords.forEach(record => {
-        const key = `${record.nama_murid} | ${record.sekolah}`;
-        const student = grouped.get(key) || { name: record.nama_murid, school: record.sekolah, total: 0, assessed: 0, score: 0 };
-        student.total += 1;
-        if(record.status === "Dinilai") { student.assessed += 1; student.score += Number(record.total_score || 0); }
-        grouped.set(key, student);
-      });
-      const analysis = $("student-analysis");
-      if(analysis) analysis.innerHTML = grouped.size ? Array.from(grouped.values()).map(student => {
-        const score = student.assessed ? `${(student.score / student.assessed).toFixed(1)} / 100` : "Belum dinilai";
-        return `<div class="rubric-card"><div class="flex justify-between gap-3"><strong>${escapeHTML(student.name)}</strong><span class="pill ${student.assessed ? "done" : "pending"}">${score}</span></div><p class="text-xs text-gray-500 mt-1">${escapeHTML(student.school)} · ${student.assessed}/${student.total} karya dinilai</p></div>`;
-      }).join("") : `<p class="text-sm text-gray-500">Tiada data murid lagi.</p>`;
-
-      const reportRecords = getReportRecords();
-      const reportAssessed = reportRecords.filter(record => record.status === "Dinilai");
-      const reportPending = reportRecords.length - reportAssessed.length;
-      $("report-summary").textContent = reportRecords.length ? `${reportRecords.length} karya diterima, ${reportAssessed.length} telah dinilai dan ${reportPending} masih menunggu semakan.` : "Tiada laporan untuk dipaparkan.";
-      const reportBody = $("report-table-body");
-      reportBody.innerHTML = reportAssessed.length ? reportAssessed.map((record, index) => `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${escapeHTML(record.nama_murid)}<br><span class="text-gray-500">${escapeHTML(record.sekolah)}</span></td>
-          <td>${escapeHTML(record.tahun)} / ${escapeHTML(record.kelas)}</td>
-          <td>${record.gambar_karya ? `<img class="art-thumb" src="${escapeHTML(record.gambar_karya)}" alt="Karya ${escapeHTML(record.nama_murid)}">` : "-"}</td>
-          <td>${escapeHTML(record.tajuk_karya)}</td>
-          <td>${escapeHTML(record.jenis_karya)}</td>
-          <td><strong>${escapeHTML(record.total_score)} / 100</strong></td>
-          <td>${getPerformanceLevel(record.total_score)}</td>
-          <td>${escapeHTML(record.ulasan_guru || "Tiada ulasan")}</td>
-          <td>${escapeHTML(record.aktiviti_susulan || "Tiada")}</td>
-          <td>${escapeHTML(record.tarikh_dinilai || record.tarikh || "-")}</td>
-        </tr>`).join("") : `<tr><td colspan="11" class="text-center text-gray-500 py-8">Tiada karya yang telah dinilai untuk dipaparkan.</td></tr>`;
-    }
-
-    function getPerformanceLevel(score) {
-      const value = Number(score || 0);
-      if(value >= 91) return "TP6";
-      if(value >= 76) return "TP5";
-      if(value >= 61) return "TP4";
-      if(value >= 41) return "TP3";
-      if(value >= 21) return "TP2";
+    // =========================================================
+    // FUNGSI RENDER UTAMA (Laman Guru & Galeri)
+    // =========================================================
+    function getPerformanceLevel(total) {
+      if (total >= 91) return "TP6";
+      if (total >= 76) return "TP5";
+      if (total >= 61) return "TP4";
+      if (total >= 41) return "TP3";
+      if (total >= 21) return "TP2";
       return "TP1";
     }
 
-    function selectRecord(idx) {
-      selectedIndex = idx;
-      const rec = records[idx];
+    function getSelectedRecord() {
+      return selectedRecordId === null ? null : records.find(record => String(record.id) === String(selectedRecordId)) || null;
+    }
+
+    function clearAssessmentFromRecord(record) {
+      return {
+        ...record,
+        status: "Dihantar",
+        rubric_scores: null,
+        total_score: null,
+        tp: null,
+        ulasan_guru: "",
+        aktiviti_susulan: "",
+        tarikh_dinilai: null
+      };
+    }
+
+    function deleteReportRecord(recordId) {
+      const targetRecord = records.find(record => String(record.id) === String(recordId));
+      if (!targetRecord) return;
+      if (!confirm(`Padam laporan karya ${targetRecord.nama_murid || "murid ini"}?`)) return;
+      const clearedRecord = clearAssessmentFromRecord(targetRecord);
+      records = records.map(record => String(record.id) === String(recordId) ? clearedRecord : record);
+      saveRecords(records);
+      simpanAtauQueue(clearedRecord);
+      if (String(selectedRecordId) === String(recordId)) selectRecord(recordId);
+      renderTeacher();
+      toast("Laporan dipadam. Karya dikekalkan dalam senarai untuk dinilai semula.");
+    }
+
+    function deleteFilteredReports() {
+      const reportRecords = getReportRecords();
+      if (!reportRecords.length) {
+        toast("Tiada laporan untuk dipadam.", "error");
+        return;
+      }
+      if (!confirm(`Padam ${reportRecords.length} laporan yang sedang dipaparkan? Tindakan ini tidak boleh dibuat asal.`)) return;
+      const ids = new Set(reportRecords.map(record => String(record.id)));
+      const clearedRecords = reportRecords.map(clearAssessmentFromRecord);
+      records = records.map(record => ids.has(String(record.id)) ? clearAssessmentFromRecord(record) : record);
+      saveRecords(records);
+      clearedRecords.forEach(record => simpanAtauQueue(record));
+      selectedRecordId = null;
+      $("assessment-form").classList.add("hidden");
+      $("assessment-empty").classList.remove("hidden");
+      renderTeacher();
+      toast("Laporan dipadam. Semua karya dikekalkan dalam senarai.");
+    }
+
+    function renderPerformanceAndReport() {
+      const reportRecords = getReportRecords();
+      const assessed = reportRecords.filter(record => record.status === "Dinilai");
+      const pending = reportRecords.length - assessed.length;
+      const average = assessed.length ? Math.round(assessed.reduce((sum, record) => sum + Number(record.total_score || 0), 0) / assessed.length) : 0;
+      const scores = rubric.map(item => {
+        const values = assessed.map(record => Number(record.rubric_scores?.[item.key] || 0)).filter(value => value > 0);
+        return { ...item, average: values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : 0 };
+      });
+
+      $("stat-assessed").textContent = assessed.length;
+      $("stat-average").textContent = assessed.length ? `${average} / 100` : "-";
+      $("stat-action").textContent = pending ? `${pending} karya menunggu` : "Semua disemak";
+      $("review-pending").textContent = pending;
+      $("review-assessed").textContent = assessed.length;
+      const progress = reportRecords.length ? Math.round((assessed.length / reportRecords.length) * 100) : 0;
+      $("review-progress-label").textContent = `${progress}%`;
+      $("review-progress-bar").style.width = `${progress}%`;
+      $("aspect-analysis").innerHTML = scores.map(item => `<div class="aspect-card"><strong>${escapeHTML(item.label)}</strong><p class="text-sm text-gray-500 mt-2">${item.average} / ${item.max}</p><div class="aspect-track"><div class="aspect-fill" style="width: ${item.max ? Math.round(item.average / item.max * 100) : 0}%"></div></div></div>`).join("");
+      $("analysis-message").textContent = assessed.length ? `Analisis berdasarkan ${assessed.length} karya yang telah dinilai.` : "Analisis akan dipaparkan selepas sekurang-kurangnya satu karya dinilai.";
+      $("report-summary").textContent = `${reportRecords.length} rekod · ${assessed.length} telah dinilai · ${pending} menunggu semakan`;
+      $("report-table-body").innerHTML = reportRecords.map((record, index) => `<tr><td>${index + 1}</td><td>${escapeHTML(record.nama_murid)}</td><td>${escapeHTML(record.tahun)} / ${escapeHTML(record.kelas)}</td><td>${record.gambar_karya ? `<img class="art-thumb" src="${escapeHTML(record.gambar_karya)}" alt="Karya ${escapeHTML(record.tajuk_karya)}">` : "-"}</td><td>${escapeHTML(record.tajuk_karya)}</td><td>${escapeHTML(record.jenis_karya)}</td><td>${record.status === "Dinilai" ? `${Number(record.total_score || 0)} / 100` : "-"}</td><td>${record.status === "Dinilai" ? getPerformanceLevel(Number(record.total_score || 0)) : "-"}</td><td>${escapeHTML(record.ulasan_guru || "-")}</td><td>${escapeHTML(record.aktiviti_susulan || "-")}</td><td>${escapeHTML(record.tarikh_dinilai || record.tarikh || "-")}</td><td><button type="button" class="btn !px-3 !py-2 text-xs" style="background:#eef1f2;color:#a83224" onclick="deleteReportRecord('${escapeHTML(record.id)}')">Padam</button></td></tr>`).join("");
+    }
+
+    function renderTeacher() {
+      const filtered = getFilteredRecords();
+      const listContainer = $("record-list");
+      const recordCount = $("record-count");
+
+      if (recordCount) recordCount.textContent = `${filtered.length} Karya`;
+
+      if (!listContainer) return;
+
+      if (filtered.length === 0) {
+        listContainer.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">Tiada rekod karya ditemui.</p>`;
+        renderPerformanceAndReport();
+        return;
+      }
+
+      listContainer.innerHTML = filtered.map((rec, idx) => `
+        <button type="button" class="record ${String(selectedRecordId) === String(rec.id) ? 'selected' : ''}" onclick="selectRecord('${escapeHTML(rec.id)}')">
+          <div class="flex justify-between items-start">
+            <strong>${escapeHTML(rec.nama_murid)}</strong>
+            <span class="pill ${rec.status === 'Dinilai' ? 'done' : 'pending'}">${rec.status || 'Dihantar'}</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">${escapeHTML(rec.tajuk_karya)} (${escapeHTML(rec.jenis_karya)})</p>
+          <p class="text-xs text-gray-400 mt-0.5">${escapeHTML(rec.tahun)} · ${escapeHTML(rec.kelas)}</p>
+        </button>
+      `).join("");
+      renderPerformanceAndReport();
+    }
+
+    function selectRecord(recordId) {
+      selectedRecordId = recordId;
+      const filtered = getFilteredRecords();
+      const rec = filtered.find(record => String(record.id) === String(recordId));
+      if (!rec) return;
+
       $("assessment-empty").classList.add("hidden");
       $("assessment-form").classList.remove("hidden");
 
-      $("selected-title").textContent = rec.tajuk_karya;
-      $("selected-meta").textContent = `Oleh: ${rec.nama_murid} | ${rec.jenis_karya}`;
-      $("selected-reflection").textContent = rec.apresiasi_kendiri;
-      $("selected-art-details").textContent = `Media: ${rec.media || "Tiada"} | Bahan: ${rec.bahan || "Tiada"} | Teknik: ${rec.teknik || "Tiada"} | Unsur Seni: ${rec.unsur_seni || "Tiada"} | Prinsip Rekaan: ${rec.prinsip_rekaan || "Tiada"}`;
-      $("selected-image").src = rec.gambar_karya || "";
-      $("selected-image").classList.toggle("hidden", !rec.gambar_karya);
+      $("selected-title").textContent = rec.tajuk_karya || "Karya Tanpa Tajuk";
+      $("selected-meta").textContent = `Oleh: ${rec.nama_murid} (${rec.tahun} - ${rec.kelas}) | ${rec.sekolah}`;
+      $("selected-reflection").textContent = rec.apresiasi_kendiri || rec.refleksi || "Tiada refleksi murid.";
 
-      $("teacher-review").value = rec.ulasan_guru || "";
-      $("followup").value = rec.aktiviti_susulan || "";
-      updateAIAvailability();
-      rubric.forEach((item, index) => {
-        const value = rec.rubric_scores?.[item.key] ?? item.defaultValue;
-        $(`rubric-in-${index}`).value = value;
-        $(`score-val-${index}`).textContent = `${value} / ${item.max}`;
-      });
-      const selectedTotal = rubric.reduce((sum, item, index) => sum + Number($(`rubric-in-${index}`).value), 0);
-      $("teacher-total-score").textContent = selectedTotal;
-      $("teacher-tp-score").textContent = getPerformanceLevel(selectedTotal);
-
-      renderTeacher();
-    }
-
-    // SIMPAN PENILAIAN GURU
-    $("assessment-form").onsubmit = async (e) => {
-      e.preventDefault();
-      if(selectedIndex === null) return;
-
-      let total = 0;
-      const rubricScores = {};
-      rubric.forEach((item, index) => {
-        const score = Number($(`rubric-in-${index}`).value);
-        rubricScores[item.key] = score;
-        total += score;
-      });
-
-      records[selectedIndex].status = "Dinilai";
-      records[selectedIndex].total_score = total;
-      records[selectedIndex].rubric_scores = rubricScores;
-      records[selectedIndex].tarikh_dinilai = new Date().toLocaleDateString("ms-MY");
-      records[selectedIndex].ulasan_guru = $("teacher-review").value.trim();
-      records[selectedIndex].aktiviti_susulan = $("followup").value.trim();
-
-      saveRecords(records);
-      const synced = await syncRecord(records[selectedIndex]);
-      toast(synced ? "Penilaian guru berjaya disimpan dan disegerakkan." : "Penilaian disimpan pada laptop. Penyegerakan akan dicuba semula apabila sambungan tersedia.", synced ? "success" : "error");
-      renderTeacher();
-    };
-
-    // MUZIK SYNTHESIZER OFFLINE (WEB AUDIO API)
-    let audioCtx = null, isPlaying = false, musicTimer = null, musicStep = 0, autoMusicTriggered = false;
-    const melodies = {
-      calm: [261.63, 293.66, 329.63, 392.00, 329.63, 293.66],
-      bright: [392.00, 440.00, 493.88, 523.25, 493.88, 440.00],
-      dreamy: [329.63, 392.00, 493.88, 659.25, 493.88, 392.00],
-      piano: [261.63, 329.63, 392.00, 523.25, 659.25, 523.25],
-      guitar: [196.00, 246.94, 293.66, 246.94, 220.00, 246.94]
-    };
-    const musicChoice = $("music-choice");
-    function updateMusicButton() {
-      $("music-toggle").setAttribute("aria-pressed", String(isPlaying));
-      $("music-toggle").querySelector('[data-template-id="music-off-text"]').classList.toggle("hidden", isPlaying);
-      $("music-toggle").querySelector('[data-template-id="music-on-text"]').classList.toggle("hidden", !isPlaying);
-    }
-
-    function startMusic() {
-      if(isPlaying) return;
-      if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      audioCtx.resume();
-      isPlaying = true;
-      musicStep = 0;
-      playOfflineTone();
-      updateMusicButton();
-    }
-
-    $("music-toggle").onclick = () => {
-      autoMusicTriggered = true;
-      if(isPlaying) {
-        audioCtx.suspend(); isPlaying = false; clearTimeout(musicTimer);
+      const img = $("selected-image");
+      if (rec.gambar_karya) {
+        img.src = rec.gambar_karya;
+        img.classList.remove("hidden");
       } else {
-        startMusic();
+        img.classList.add("hidden");
       }
-      updateMusicButton();
-    };
-    function triggerAutoMusic(event) {
-      const button = event.target.closest("button");
-      if(button && button.id !== "music-toggle" && !autoMusicTriggered) {
-        autoMusicTriggered = true;
-        startMusic();
+
+      if (rec.rubric_scores) {
+        rubric.forEach((item, index) => {
+          const score = Math.max(0, Math.min(item.max, Number(rec.rubric_scores[item.key] || 0)));
+          const slider = $(`rubric-in-${index}`);
+          if (slider) slider.value = score;
+          const label = $(`score-val-${index}`);
+          if (label) label.textContent = `${score} / ${item.max}`;
+        });
+        kemaskiniJumlahMarkah();
+      }
+
+      if ($("teacher-review")) $("teacher-review").value = rec.ulasan_guru || "";
+      if ($("followup")) $("followup").value = rec.aktiviti_susulan || "";
+
+      renderTeacher();
+      $("assessment-form").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function deleteSelectedRecord() {
+      if (selectedRecordId === null) return;
+      if (!confirm("Adakah anda pasti ingin memadam rekod ini?")) return;
+
+      const targetRecord = getSelectedRecord();
+
+      if (targetRecord) {
+        records = records.filter(r => String(r.id) !== String(targetRecord.id));
+        saveRecords(records);
+        removePendingRecord(targetRecord.id);
+        deleteCloudRecord(targetRecord.id);
+        selectedRecordId = null;
+        $("assessment-form").classList.add("hidden");
+        $("assessment-empty").classList.remove("hidden");
+        renderTeacher();
+        toast("Rekod karya berjaya dipadam.");
       }
     }
-    document.addEventListener("pointerdown", triggerAutoMusic, true);
-    document.addEventListener("click", triggerAutoMusic, true);
-    musicChoice.onchange = () => {
-      musicStep = 0;
-      if(isPlaying) playOfflineTone();
-    };
 
-    function playOfflineTone() {
-      if(!isPlaying) return;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = "sine";
-      const melody = melodies[musicChoice.value] || melodies.calm;
-      osc.frequency.setValueAtTime(melody[musicStep % melody.length], audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.06, audioCtx.currentTime + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.42);
-      osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.45);
-      musicStep += 1;
-      musicTimer = setTimeout(playOfflineTone, 520);
+    function closeRubric() {
+      const modal = $("rubric-modal");
+      if (modal) modal.classList.add("hidden");
     }
-  
-</script>
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-    <script>
-      // Konfigurasi Firebase Projek creativelense-ai
-      const firebaseConfig = {
-        apiKey: "AIzaSyAVojd8k70FLpZYTqtNouYNs1DnDP8i9oU",
-        authDomain: "creativelense-ai.firebaseapp.com",
-        projectId: "creativelense-ai",
-        storageBucket: "creativelense-ai.firebasestorage.app",
-        messagingSenderId: "652721621512",
-        appId: "1:652721621512:web:f4efb87a30d43b780c1fbd",
-        measurementId: "G-48GS0BD679"
-      };
+    // Inisialisasi Butang AI & Event Listener
+    document.addEventListener("DOMContentLoaded", () => {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("./sw.js").catch(error => console.warn("Service worker tidak dapat didaftarkan.", error));
+      }
+      loadGeminiKey();
+      const aiBtn = $("ai-assist-btn");
+      if (aiBtn) {
+        aiBtn.disabled = false;
+        aiBtn.onclick = janaAnalisisAI;
+      }
+      const closeRubricBtn = $("close-rubric");
+      if (closeRubricBtn) closeRubricBtn.onclick = closeRubric;
 
-      // Inisialisasi Firebase
-      firebase.initializeApp(firebaseConfig);
-      const db = firebase.firestore();
+      const studentRubricBtn = $("student-rubric-btn");
+      if (studentRubricBtn) studentRubricBtn.onclick = () => $("rubric-modal").classList.remove("hidden");
 
-  // Aktifkan Offline Persistence
-    db.enablePersistence({ synchronizeTabs: true })
-      .then(() => console.log("Firebase Offline Persistence Aktif!"))
-      .catch((err) => console.error("Ralat Persistence:", err.code));
+      const teacherRubricBtn = $("teacher-rubric-btn");
+      if (teacherRubricBtn) teacherRubricBtn.onclick = () => $("rubric-modal").classList.remove("hidden");
+
+      const guidedReflectionBtn = $("guided-reflection-btn");
+      if (guidedReflectionBtn) guidedReflectionBtn.onclick = janaTemplatApresiasi;
+      const selfAssessmentBtn = $("self-assessment-btn");
+      if (selfAssessmentBtn) selfAssessmentBtn.onclick = janaPenilaianKendiriAI;
+
+      renderTeacher();
+    });
   </script>
-
-  <!-- Skrip Pendaftaran PWA -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(() => console.log('PWA Service Worker Berjaya!'))
-          .catch((err) => console.log('Ralat PWA:', err));
-      });
-    }
-  </script>
-</body>    
+</body>
+</html>
