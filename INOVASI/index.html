@@ -1493,8 +1493,13 @@
 // =========================================================
 
 function getGeminiApiKey() {
-  const DEFAULT_KEY = "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";
+  const DEFAULT_KEY = "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";
   const savedKey = localStorage.getItem("openrouter_api_key") || localStorage.getItem("gemini_api_key");
+  if (savedKey === "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") {
+    localStorage.removeItem("openrouter_api_key");
+    localStorage.removeItem("gemini_api_key");
+    return DEFAULT_KEY;
+  }
   if (savedKey && !localStorage.getItem("openrouter_api_key")) {
     localStorage.setItem("openrouter_api_key", savedKey);
     localStorage.removeItem("gemini_api_key");
