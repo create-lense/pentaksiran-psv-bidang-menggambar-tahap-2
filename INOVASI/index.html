@@ -1093,7 +1093,14 @@
         const mergedRecords = new Map(localRecords.map(record => [String(record.id), record]));
         data.forEach(record => {
           const normalizedRecord = { ...record, apresiasi_kendiri: record.apresiasi_kendiri || record.refleksi || "" };
-          mergedRecords.set(String(record.id), { ...mergedRecords.get(String(record.id)), ...normalizedRecord });
+          const existing = mergedRecords.get(String(record.id)) || {};
+          const cloudImg = normalizedRecord.gambar_karya || normalizedRecord.gambar || "";
+          const localImg = existing.gambar_karya || "";
+          mergedRecords.set(String(record.id), {
+            ...existing,
+            ...normalizedRecord,
+            gambar_karya: cloudImg || localImg || ""
+          });
         });
         records = [...mergedRecords.values()];
         saveRecords(records);
@@ -1387,8 +1394,9 @@
       const yearFilter = $("filter-year").value;
       const classFilter = $("filter-class").value.trim().toLowerCase();
       const statusFilter = $("filter-status").value;
+      const targetSchool = verifiedTeacherSchool || (activeTeacherSchool && SCHOOL_ACCESS[activeTeacherSchool] ? normaliseSchool(SCHOOL_ACCESS[activeTeacherSchool].sekolah) : "");
       return getRecords().filter(record =>
-        (!verifiedTeacherSchool || normaliseSchool(record.sekolah) === verifiedTeacherSchool) &&
+        (!targetSchool || normaliseSchool(record.sekolah) === targetSchool) &&
         (!yearFilter || record.tahun === yearFilter) &&
         (!classFilter || String(record.kelas || "").toLowerCase().includes(classFilter)) &&
         (!statusFilter || record.status === statusFilter)
@@ -1398,8 +1406,9 @@
     function getReportRecords() {
       const year = $("report-year").value;
       const className = $("report-class").value.trim().toLowerCase();
+      const targetSchool = verifiedTeacherSchool || (activeTeacherSchool && SCHOOL_ACCESS[activeTeacherSchool] ? normaliseSchool(SCHOOL_ACCESS[activeTeacherSchool].sekolah) : "");
       return getRecords().filter(record =>
-        (!verifiedTeacherSchool || normaliseSchool(record.sekolah) === verifiedTeacherSchool) &&
+        (!targetSchool || normaliseSchool(record.sekolah) === targetSchool) &&
         (!year || record.tahun === year) &&
         (!className || String(record.kelas || "").toLowerCase().includes(className))
       ).sort((left, right) => String(left.nama_murid || "").localeCompare(String(right.nama_murid || ""), "ms", { sensitivity: "base" }));
@@ -1974,7 +1983,7 @@ function paparMarkahRubrikKendiri(m1, m2, m3, m4, m5, total, tp, cadangan) {
     function selectRecord(recordId) {
       selectedRecordId = recordId;
       const filtered = getFilteredRecords();
-      const rec = filtered.find(record => String(record.id) === String(recordId));
+      const rec = filtered.find(record => String(record.id) === String(recordId)) || records.find(record => String(record.id) === String(recordId));
       if (!rec) return;
 
       $("assessment-empty").classList.add("hidden");
