@@ -1197,8 +1197,8 @@
     if($("report-year")) $("report-year").onchange = renderTeacher;
     if($("report-class")) $("report-class").oninput = renderTeacher;
     $("delete-record").onclick = deleteSelectedRecord;
-    $("student-form").onsubmit = async event => {
-      event.preventDefault();
+    async function hantarKarya(event) {
+      if (event) event.preventDefault();
       const form = $("student-form");
       if (!form.checkValidity()) {
         form.reportValidity();
@@ -1245,7 +1245,8 @@
       } finally {
         submitButton.disabled = false;
       }
-    };
+    }
+    $("student-form").onsubmit = hantarKarya;
     $("assessment-form").onsubmit = async event => {
       event.preventDefault();
       const targetRecord = getSelectedRecord();
