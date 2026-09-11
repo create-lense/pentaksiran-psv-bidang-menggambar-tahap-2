@@ -543,7 +543,6 @@
           <div class="teacher-filters">
             <div class="teacher-filter"><label class="label" for="filter-year">Tahun</label><select id="filter-year" class="input"><option value="">Semua tahun</option><option>Tahun 4</option><option>Tahun 5</option><option>Tahun 6</option></select></div>
             <div class="teacher-filter"><label class="label" for="filter-class">Kelas</label><input id="filter-class" class="input" placeholder="Contoh: 2 Bestari"></div>
-            <div class="teacher-filter"><label class="label" for="filter-student">Murid</label><select id="filter-student" class="input"><option value="">Semua murid</option></select></div>
             <div class="teacher-filter"><label class="label" for="filter-status">Status karya</label><select id="filter-status" class="input"><option value="">Semua status</option><option value="Dihantar">Belum dinilai</option><option value="Dinilai">Sudah dinilai</option></select></div>
           </div>
         </section>
@@ -1180,7 +1179,6 @@
     $("filter-year").onchange = renderTeacher;
     $("filter-status").onchange = renderTeacher;
     $("filter-class").oninput = renderTeacher;
-    $("filter-student").onchange = renderTeacher;
     $("result-form").onsubmit = event => {
       event.preventDefault();
       const name = $("result-name").value.trim().toLocaleLowerCase("ms-MY");
@@ -1305,13 +1303,11 @@
     function getFilteredRecords() {
       const yearFilter = $("filter-year").value;
       const classFilter = $("filter-class").value.trim().toLowerCase();
-      const studentFilter = $("filter-student").value;
       const statusFilter = $("filter-status").value;
       return getRecords().filter(record =>
         (!verifiedTeacherSchool || normaliseSchool(record.sekolah) === verifiedTeacherSchool) &&
         (!yearFilter || record.tahun === yearFilter) &&
         (!classFilter || String(record.kelas || "").toLowerCase().includes(classFilter)) &&
-        (!studentFilter || `${record.nama_murid} | ${record.sekolah}` === studentFilter) &&
         (!statusFilter || record.status === statusFilter)
       );
     }
@@ -1852,14 +1848,17 @@ function paparMarkahRubrikKendiri(m1, m2, m3, m4, m5, total, tp, cadangan) {
       }
 
       listContainer.innerHTML = filtered.map((rec, idx) => `
-        <button type="button" class="record ${String(selectedRecordId) === String(rec.id) ? 'selected' : ''}" onclick="selectRecord('${escapeHTML(rec.id)}')">
+        <article class="record ${String(selectedRecordId) === String(rec.id) ? 'selected' : ''}">
+          <button type="button" class="w-full text-left" onclick="selectRecord('${escapeHTML(rec.id)}')">
           <div class="flex justify-between items-start">
             <strong>${escapeHTML(rec.nama_murid)}</strong>
             <span class="pill ${rec.status === 'Dinilai' ? 'done' : 'pending'}">${rec.status || 'Dihantar'}</span>
           </div>
           <p class="text-xs text-gray-500 mt-1">${escapeHTML(rec.tajuk_karya)} (${escapeHTML(rec.jenis_karya)})</p>
           <p class="text-xs text-gray-400 mt-0.5">${escapeHTML(rec.tahun)} · ${escapeHTML(rec.kelas)}</p>
-        </button>
+          </button>
+          <button type="button" class="btn !px-3 !py-2 mt-3 text-xs" style="background:#eef1f2;color:#a83224" onclick="event.stopPropagation(); deleteStudentRecord('${escapeHTML(rec.id)}')">Padam Murid</button>
+        </article>
       `).join("");
       renderPerformanceAndReport();
     }
@@ -1901,6 +1900,23 @@ function paparMarkahRubrikKendiri(m1, m2, m3, m4, m5, total, tp, cadangan) {
 
       renderTeacher();
       $("assessment-form").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function deleteStudentRecord(recordId) {
+      const targetRecord = records.find(record => String(record.id) === String(recordId));
+      if (!targetRecord) return;
+      if (!confirm(`Padam rekod murid ${targetRecord.nama_murid || "ini"} sepenuhnya?`)) return;
+      records = records.filter(record => String(record.id) !== String(recordId));
+      saveRecords(records);
+      removePendingRecord(recordId);
+      deleteCloudRecord(recordId);
+      if (String(selectedRecordId) === String(recordId)) {
+        selectedRecordId = null;
+        $("assessment-form").classList.add("hidden");
+        $("assessment-empty").classList.remove("hidden");
+      }
+      renderTeacher();
+      toast("Rekod murid berjaya dipadam.");
     }
 
     function deleteSelectedRecord() {
