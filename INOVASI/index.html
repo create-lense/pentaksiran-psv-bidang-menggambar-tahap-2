@@ -1080,24 +1080,23 @@
       toast("Notis berjaya disimpan.");
     };
 
-    // ===== AI (OpenRouter vision) =====
-    const DEFAULT_OPENROUTER_KEY = "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";
-    function getOpenRouterApiKey() {
-      const savedKey = (localStorage.getItem("openrouter_api_key") || "").trim();
-      return savedKey.startsWith("sk-or-") ? savedKey : DEFAULT_OPENROUTER_KEY;
+    // ===== AI (OpenAI vision) =====
+    const DEFAULT_OPENAI_KEY = "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";
+    function getOpenAIApiKey() {
+      return DEFAULT_OPENAI_KEY;
     }
 
-    function requestOpenRouterKey() {
-      const key = window.prompt("Masukkan API key OpenRouter untuk menggunakan analisis AI:");
+    function requestOpenAIKey() {
+      const key = window.prompt("Masukkan API key OpenAI untuk menggunakan analisis AI:");
       const trimmedKey = (key || "").trim();
       if (!trimmedKey) return "";
-      localStorage.setItem("openrouter_api_key", trimmedKey);
+      localStorage.setItem("openai_api_key", trimmedKey);
       return trimmedKey;
     }
 
     async function analisisKaryaDenganGemini(karyaData, base64Image) {
-      const apiKey = getOpenRouterApiKey();
-      if (!apiKey) throw new Error("Sila masukkan API key OpenRouter yang sah.");
+      const apiKey = getOpenAIApiKey();
+      if (!apiKey) throw new Error("Sila masukkan API key OpenAI yang sah.");
       if (!base64Image) throw new Error("Gambar karya diperlukan untuk analisis AI vision.");
 
       const promptText = `Anda ialah pembantu pentaksiran kepada guru Pendidikan Seni Visual (PSV) Sekolah Rendah.
@@ -1121,11 +1120,11 @@ Sila berikan maklum balas dalam FORMAT JSON SAHAJA:
 }`;
 
       const formattedImage = base64Image.startsWith("data:") ? base64Image : `data:image/jpeg;base64,${base64Image}`;
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: "openai/gpt-4o-mini",
+          model: "gpt-4o-mini",
           messages: [{ role: "user", content: [{ type: "text", text: promptText }, { type: "image_url", image_url: { url: formattedImage } }] }],
           response_format: { type: "json_object" },
           temperature: 0.7
@@ -1135,16 +1134,15 @@ Sila berikan maklum balas dalam FORMAT JSON SAHAJA:
       if (!response.ok) {
         let errData;
         try { errData = await response.json(); } catch(e) { errData = { error: { message: response.statusText } }; }
-        if (response.status === 401 || response.status === 403) throw new Error("Akses OpenRouter ditolak. Key disimpan supaya boleh dicuba semula; semak status key dan tetapan provider anda.");
-        if (response.status === 402) throw new Error("Kredit OpenRouter tidak mencukupi. Tambah kredit atau pilih model yang tersedia.");
-        if (response.status === 429) throw new Error("Had penggunaan OpenRouter telah dicapai. Cuba lagi sebentar lagi.");
-        throw new Error(`OpenRouter Error (${response.status}): ${errData.error?.message || JSON.stringify(errData)}`);
+        if (response.status === 401 || response.status === 403) throw new Error("Akses OpenAI ditolak. Semak status API key dan projek OpenAI anda.");
+        if (response.status === 429) throw new Error("Had penggunaan atau kredit OpenAI telah dicapai. Cuba lagi kemudian atau semak billing projek.");
+        throw new Error(`OpenAI Error (${response.status}): ${errData.error?.message || JSON.stringify(errData)}`);
       }
 
       const data = await response.json();
       let rawText = data.choices?.[0]?.message?.content;
       if (Array.isArray(rawText)) rawText = rawText.map(part => part.text || "").join("");
-      if (!rawText) throw new Error("Respons OpenRouter tidak mengandungi kandungan analisis.");
+      if (!rawText) throw new Error("Respons OpenAI tidak mengandungi kandungan analisis.");
       if (rawText.includes("```json")) rawText = rawText.split("```json")[1].split("```")[0].trim();
       else if (rawText.includes("```")) rawText = rawText.split("```")[1].split("```")[0].trim();
 
@@ -1207,8 +1205,8 @@ Sila berikan maklum balas dalam FORMAT JSON SAHAJA:
         return;
       }
 
-      const apiKey = getOpenRouterApiKey();
-      if (!apiKey) { if (aiStatus) aiStatus.textContent = "API key OpenRouter diperlukan untuk menggunakan AI."; return; }
+      const apiKey = getOpenAIApiKey();
+      if (!apiKey) { if (aiStatus) aiStatus.textContent = "API key OpenAI diperlukan untuk menggunakan AI."; return; }
       try {
         if (aiStatus) aiStatus.textContent = "Sedang menjana analisis AI...";
         const artwork = getArtworkContext(targetRecord);
