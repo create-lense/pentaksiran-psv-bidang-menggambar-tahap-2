@@ -444,12 +444,20 @@
 
       <!-- HALAMAN GURU -->
       <section id="teacher-page" class="page hidden analysis-page max-w-[1500px] mx-auto">
-        <div class="mb-6 flex justify-between items-center">
+        <div class="mb-6 flex flex-wrap justify-between items-center gap-3">
           <div>
             <p class="uppercase tracking-[.16em] font-bold text-xs mb-2" style="color: rgb(232, 93, 74);">Laman Guru</p>
             <h1 class="display-font text-3xl" style="color: rgb(23, 50, 77);">Ruang Pentaksiran Guru</h1>
           </div>
-          <span id="record-count" class="font-bold text-sm bg-white px-3 py-1 rounded-full border">0 Karya</span>
+          <div class="flex items-center gap-2 ml-auto">
+            <span id="record-count" class="font-bold text-sm bg-white px-3 py-1 rounded-full border">0 Karya</span>
+            <label for="teacher-section-switch" class="sr-only">Pilih paparan</label>
+            <select id="teacher-section-switch" class="input !w-auto !py-2 !px-3">
+              <option value="senarai">Senarai Karya</option>
+              <option value="analisis">Analisis Prestasi</option>
+              <option value="laporan">Rekod Penuh</option>
+            </select>
+          </div>
         </div>
         <section class="guide-card teacher-guide mb-6" aria-labelledby="teacher-guide-title">
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -889,9 +897,25 @@
     }
 
     // ===== NAVIGASI =====
+    const TEACHER_SECTION_IDS = {
+      senarai: ["teacher-record-filters", "teacher-record-list"],
+      analisis: ["teacher-performance-analysis"],
+      laporan: ["analytics-grid"]
+    };
+    let activeTeacherSection = "senarai";
+
     function setTeacherDataVisibility(isVisible) {
-      ["teacher-record-filters", "teacher-record-list", "teacher-performance-analysis", "analytics-grid"].forEach(id => { if ($(id)) $(id).classList.toggle("hidden", !isVisible); });
+      const allIds = Object.values(TEACHER_SECTION_IDS).flat();
+      const showIds = isVisible ? (TEACHER_SECTION_IDS[activeTeacherSection] || []) : [];
+      allIds.forEach(id => { if ($(id)) $(id).classList.toggle("hidden", !showIds.includes(id)); });
     }
+
+    $("teacher-section-switch").onchange = () => {
+      activeTeacherSection = $("teacher-section-switch").value;
+      setTeacherDataVisibility(teacherSchoolVerified);
+      const firstId = TEACHER_SECTION_IDS[activeTeacherSection]?.[TEACHER_SECTION_IDS[activeTeacherSection].length - 1];
+      if (firstId && $(firstId)) $(firstId).scrollIntoView({ behavior: "smooth", block: "start" });
+    };
 
     function showPage(name) {
       Object.entries(pages).forEach(([k, p]) => p.classList.toggle("hidden", k !== name));
@@ -908,6 +932,63 @@
 
     function openRubric() { $("rubric-modal").classList.remove("hidden"); }
     function closeRubric() { $("rubric-modal").classList.add("hidden"); }
+
+    // ===== MUZIK LATAR (dijana terus guna Web Audio API, tiada fail audio diperlukan) =====
+    const MUSIC_PRESETS = {
+      calm: { wave: "sine", tempo: 900, gain: 0.05, notes: [261.63, 329.63, 392.00, 329.63, 293.66, 349.23, 392.00, 440.00] },
+      bright: { wave: "triangle", tempo: 420, gain: 0.05, notes: [392.00, 440.00, 493.88, 587.33, 523.25, 440.00, 493.88, 587.33] },
+      dreamy: { wave: "sine", tempo: 1100, gain: 0.045, notes: [349.23, 440.00, 523.25, 440.00, 392.00, 493.88, 587.33, 493.88] },
+      piano: { wave: "triangle", tempo: 500, gain: 0.06, notes: [261.63, 293.66, 329.63, 349.23, 392.00, 349.23, 329.63, 293.66] },
+      guitar: { wave: "sawtooth", tempo: 380, gain: 0.035, notes: [196.00, 246.94, 293.66, 246.94, 220.00, 277.18, 329.63, 277.18] }
+    };
+    let audioCtx = null;
+    let musicTimer = null;
+    let musicPlaying = false;
+    let musicNoteIndex = 0;
+
+    function getMusicPreset() { return MUSIC_PRESETS[$("music-choice").value] || MUSIC_PRESETS.calm; }
+
+    function playMusicNote(preset) {
+      const freq = preset.notes[musicNoteIndex % preset.notes.length];
+      musicNoteIndex++;
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      osc.type = preset.wave;
+      osc.frequency.value = freq;
+      const now = audioCtx.currentTime;
+      const duration = preset.tempo / 1000;
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(preset.gain, now + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      osc.connect(gainNode).connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + duration);
+    }
+
+    function startMusic() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const preset = getMusicPreset();
+      musicPlaying = true;
+      musicNoteIndex = 0;
+      playMusicNote(preset);
+      musicTimer = setInterval(() => playMusicNote(getMusicPreset()), preset.tempo);
+      $("music-toggle").setAttribute("aria-pressed", "true");
+      $("music-toggle").querySelector('[data-template-id="music-off-text"]').classList.add("hidden");
+      $("music-toggle").querySelector('[data-template-id="music-on-text"]').classList.remove("hidden");
+    }
+
+    function stopMusic() {
+      musicPlaying = false;
+      if (musicTimer) clearInterval(musicTimer);
+      musicTimer = null;
+      $("music-toggle").setAttribute("aria-pressed", "false");
+      $("music-toggle").querySelector('[data-template-id="music-off-text"]').classList.remove("hidden");
+      $("music-toggle").querySelector('[data-template-id="music-on-text"]').classList.add("hidden");
+    }
+
+    $("music-toggle").onclick = () => { musicPlaying ? stopMusic() : startMusic(); };
+    $("music-choice").onchange = () => { stopMusic(); startMusic(); };
 
     $("nav-home").onclick = () => showPage("home");
     $("nav-student").onclick = () => showPage("student");
@@ -1416,10 +1497,10 @@ Sila berikan maklum balas dalam FORMAT JSON SAHAJA:
       const filtered = getFilteredRecords();
       if (!filtered.length) return;
       const stillSelected = selectedRecordId !== null && filtered.some(rec => String(rec.id) === String(selectedRecordId));
-      if (!stillSelected) selectRecord(filtered[filtered.length - 1].id);
+      if (!stillSelected) selectRecord(filtered[filtered.length - 1].id, false);
     }
 
-    function selectRecord(recordId) {
+    function selectRecord(recordId, shouldScroll = true) {
       selectedRecordId = recordId;
       const rec = records.find(record => String(record.id) === String(recordId));
       if (!rec) return;
@@ -1448,6 +1529,8 @@ Sila berikan maklum balas dalam FORMAT JSON SAHAJA:
       $("followup").value = rec.aktiviti_susulan || "";
 
       renderTeacher();
+      // Terus paparkan karya tanpa perlu skrol turun, terutamanya bila senarai karya panjang
+      if (shouldScroll) $("assessment-form").scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     $("assessment-form").onsubmit = async (event) => {
