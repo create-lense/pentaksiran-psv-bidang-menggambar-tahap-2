@@ -1204,38 +1204,47 @@
         form.reportValidity();
         return;
       }
-      const imageFile = $("art-image").files[0];
-      const imageData = await new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => resolve("");
-        reader.readAsDataURL(imageFile);
-      });
-      const record = {
-        id: globalThis.crypto?.randomUUID ? crypto.randomUUID() : `karya-${Date.now()}`,
-        nama_murid: $("student-name").value.trim(),
-        tahun: $("student-year").value,
-        kelas: $("student-class").value.trim(),
-        sekolah: $("student-school").value.trim(),
-        guru: $("student-teacher").value.trim(),
-        jenis_karya: $("art-type").value.trim(),
-        tajuk_karya: $("art-name").value.trim(),
-        media: $("art-media").value.trim(),
-        bahan: $("art-materials").value.trim(),
-        teknik: $("art-technique").value.trim(),
-        unsur_seni: $("art-elements").value.trim(),
-        prinsip_rekaan: $("art-principles").value.trim(),
-        apresiasi_kendiri: $("reflection").value.trim(),
-        gambar_karya: imageData,
-        status: "Dihantar",
-        tarikh: new Date().toISOString()
-      };
-      records = [...records, record];
-      saveRecords(records);
-      const synced = await syncRecord(record);
-      toast(synced ? "Karya berjaya dihantar kepada guru." : "Karya disimpan. Ia akan dihantar apabila sambungan tersedia.");
-      form.reset();
-      $("self-assessment-panel").classList.add("hidden");
+      const submitButton = $("student-submit");
+      submitButton.disabled = true;
+      try {
+        const imageFile = $("art-image").files[0];
+        const imageData = await new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result || "");
+          reader.onerror = () => resolve("");
+          reader.readAsDataURL(imageFile);
+        });
+        const record = {
+          id: globalThis.crypto?.randomUUID ? crypto.randomUUID() : `karya-${Date.now()}`,
+          nama_murid: $("student-name").value.trim(),
+          tahun: $("student-year").value,
+          kelas: $("student-class").value.trim(),
+          sekolah: $("student-school").value.trim(),
+          guru: $("student-teacher").value.trim(),
+          jenis_karya: $("art-type").value.trim(),
+          tajuk_karya: $("art-name").value.trim(),
+          media: $("art-media").value.trim(),
+          bahan: $("art-materials").value.trim(),
+          teknik: $("art-technique").value.trim(),
+          unsur_seni: $("art-elements").value.trim(),
+          prinsip_rekaan: $("art-principles").value.trim(),
+          apresiasi_kendiri: $("reflection").value.trim(),
+          gambar_karya: imageData,
+          status: "Dihantar",
+          tarikh: new Date().toISOString()
+        };
+        records = [...records, record];
+        saveRecords(records);
+        const synced = await syncRecord(record);
+        toast(synced ? "Karya berjaya dihantar kepada guru." : "Karya disimpan dalam Pending dan akan dihantar semula apabila sambungan tersedia.");
+        form.reset();
+        $("self-assessment-panel").classList.add("hidden");
+      } catch (error) {
+        console.error("Penghantaran karya gagal:", error);
+        toast("Karya disimpan secara tempatan. Sila tekan Hantar semula apabila sambungan tersedia.");
+      } finally {
+        submitButton.disabled = false;
+      }
     };
     $("assessment-form").onsubmit = async event => {
       event.preventDefault();
@@ -1619,6 +1628,17 @@ Sila berikan maklum balas dalam FORMAT JSON SAHAJA:
 
     async function janaAnalisisAI() {
       const aiStatus = $("ai-status");
+      if (!navigator.onLine) {
+        if (aiStatus) aiStatus.textContent = "Peranti offline. Masukkan ulasan secara manual atau sambungkan internet untuk AI.";
+        toast("AI memerlukan sambungan internet. Markah manual masih boleh disimpan.");
+        return;
+      }
+      const apiKey = getGeminiApiKey() || requestOpenRouterKey();
+      if (!apiKey) {
+        if (aiStatus) aiStatus.textContent = "API key OpenRouter belum tersedia. Masukkan key untuk menggunakan AI.";
+        toast("API key OpenRouter diperlukan untuk analisis AI.", "error");
+        return;
+      }
       try {
         if (aiStatus) aiStatus.textContent = "Sedang menjana analisis AI...";
 
