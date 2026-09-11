@@ -1489,7 +1489,8 @@
 // =========================================================
 
 function getGeminiApiKey() {
-  return localStorage.getItem("gemini_api_key") || "";
+  const DEFAULT_OPENROUTER_KEY = "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";
+  return localStorage.getItem("openrouter_api_key") || DEFAULT_OPENROUTER_KEY;
 }
 
 function requestOpenRouterKey() {
@@ -1509,7 +1510,7 @@ function loadGeminiKey() {
 }
 
 async function analisisKaryaDenganGemini(karyaData, base64Image, bolehCubaSemula = true) {
-  const apiKey = getGeminiApiKey() || requestOpenRouterKey();
+  const apiKey = getGeminiApiKey();
   if (!apiKey || apiKey.includes("MASUKKAN_KEY")) {
     throw new Error("Sila masukkan API key OpenRouter yang sah.");
   }
@@ -1577,10 +1578,6 @@ Sila berikan maklum balas dalam FORMAT JSON SAHAJA:
     catch(error) { errData = { error: { message: response.statusText } }; }
     if (response.status === 401) {
       localStorage.removeItem("gemini_api_key");
-      if (bolehCubaSemula) {
-        const newApiKey = requestOpenRouterKey();
-        if (newApiKey) return analisisKaryaDenganGemini(karyaData, base64Image, false);
-      }
       throw new Error("API key OpenRouter tidak sah atau telah tamat. Sila masukkan key baharu.");
     }
     throw new Error(`OpenRouter Error (${response.status}): ${errData.error?.message || JSON.stringify(errData)}`);
@@ -1684,13 +1681,12 @@ async function janaPenilaianKendiriAI() {
   const tajuk = $("art-name")?.value.trim() || "karya saya";
   const imageFile = $("art-image")?.files[0];
   let imageData = "";
-  let m1 = 0, m2 = 0, m3 = 0, m4 = 0, m5 = 0;
+  let m1 = 12, m2 = 15, m3 = 18, m4 = 9, m5 = 6;
   let cadanganAI = "";
-  let sumberPenilaian = "AI vision OpenRouter";
+  let gunaAI = false;
 
   try {
-    if (!imageFile) throw new Error("Gambar karya diperlukan.");
-    if (!navigator.onLine) throw new Error("offline");
+    if (!imageFile || !navigator.onLine) throw new Error("AI tidak tersedia secara offline atau gambar belum dipilih.");
     imageData = await new Promise(resolve => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result);
@@ -1699,6 +1695,7 @@ async function janaPenilaianKendiriAI() {
     });
     if (!imageData) throw new Error("Gambar tidak dapat dibaca.");
 
+    toast("Peranti online: sedang menganalisis karya dengan AI...");
     const aiResult = await analisisKaryaDenganGemini({
       nama, tajuk, media, teknik, markah: "belum dinilai", tp: "akan ditentukan"
     }, imageData);
@@ -1709,10 +1706,9 @@ async function janaPenilaianKendiriAI() {
     m4 = Math.max(0, Math.min(15, Math.round(Number(aiResult.markah_aspek.apresiasi_seni) || 0)));
     m5 = Math.max(0, Math.min(10, Math.round(Number(aiResult.markah_aspek.sikap_sahsiah) || 0)));
     cadanganAI = aiResult.aktiviti_susulan || aiResult.ulasan || "";
+    gunaAI = true;
   } catch (err) {
     console.warn("AI vision tidak tersedia; menggunakan templat lokal.", err);
-    sumberPenilaian = "Templat lokal (AI tidak tersedia)";
-    m1 = 12; m2 = 15; m3 = 18; m4 = 8; m5 = 7;
   }
 
   if (!cadanganAI) {
@@ -1726,7 +1722,7 @@ async function janaPenilaianKendiriAI() {
   const tp = getPerformanceLevel(total);
   paparMarkahRubrikKendiri(m1, m2, m3, m4, m5, total, tp, cadanganAI);
 
-  toast(`Penilaian kendiri berjaya: ${total}/100 (${tp}) · ${sumberPenilaian}`);
+  toast(gunaAI ? `Penilaian AI berjaya: ${total}/100 (${tp})` : `Penilaian kendiri mod templat: ${total}/100 (${tp})`);
   if (button) button.disabled = false;
 }
 
