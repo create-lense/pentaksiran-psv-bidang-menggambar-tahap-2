@@ -8,6 +8,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CREATIVE.LENSE AI</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAVojd8k7OFLpZYTqtNouYNs1DnDP8i9oU",
+      authDomain: "creativelense-ai.firebaseapp.com",
+      projectId: "creativelense-ai",
+      storageBucket: "creativelense-ai.firebasestorage.app",
+      messagingSenderId: "652721621512",
+      appId: "1:652721621512:web:f4efb87a30d43b780c1fbd",
+      measurementId: "G-48GS0BD679"
+    };
+    let db = null;
+    try {
+      if (window.firebase?.apps?.length) firebase.app();
+      else if (window.firebase) firebase.initializeApp(firebaseConfig);
+      if (window.firebase) db = firebase.firestore();
+    } catch (error) {
+      console.warn("Firebase tidak dapat diinisialisasikan; mod lokal/pending digunakan.", error);
+    }
+  </script>
   <style>
     :root {
       --ink: #17324d;
@@ -318,6 +339,8 @@
               <h2 id="preset-title" class="font-bold text-lg mt-1">Maklumat tugasan aktif</h2>
               <p><strong>Sekolah:</strong> <span id="display-sekolah">-</span></p>
               <p><strong>Guru Pentaksir:</strong> <span id="display-guru">-</span></p>
+              <p><strong>Kelas:</strong> <span id="display-kelas">-</span></p>
+              <p><strong>Tajuk Tugasan:</strong> <span id="display-tajuk">-</span></p>
               <p><strong>Jenis Karya:</strong> <span id="display-jenis-karya">-</span></p>
               <p><strong>Teknik:</strong> <span id="display-teknik">-</span></p>
               <p><strong>Media:</strong> <span id="display-media">-</span></p>
@@ -480,6 +503,8 @@
           <form id="guru-settings-form" class="grid md:grid-cols-2 gap-4 mt-5">
             <div><label class="label" for="guru-sekolah">Nama Sekolah</label><input class="input" type="text" id="guru-sekolah" placeholder="SK ..." required></div>
             <div><label class="label" for="guru-nama">Nama Guru Pentaksir</label><input class="input" type="text" id="guru-nama" placeholder="Cikgu ..." required></div>
+            <div><label class="label" for="guru-kelas">Kelas</label><input class="input" type="text" id="guru-kelas" placeholder="Contoh: 6 Bestari" required></div>
+            <div><label class="label" for="guru-tajuk">Tajuk Tugasan</label><input class="input" type="text" id="guru-tajuk" placeholder="Contoh: Keindahan Alam" required></div>
             <div><label class="label" for="guru-jenis">Jenis Karya</label><input class="input" type="text" id="guru-jenis" placeholder="Contoh: Kolaj" required></div>
             <div><label class="label" for="guru-media">Media</label><input class="input" type="text" id="guru-media" placeholder="Contoh: Warna poster" required></div>
             <div><label class="label" for="guru-bahan">Bahan</label><input class="input" type="text" id="guru-bahan" placeholder="Contoh: Kertas warna, gam dan gunting" required></div>
@@ -763,6 +788,8 @@
 
       $("display-sekolah").textContent = data?.sekolah || "-";
       $("display-guru").textContent = data?.guru || "-";
+      $("display-kelas").textContent = data?.kelas || "-";
+      $("display-tajuk").textContent = data?.tajuk || "-";
       $("display-jenis-karya").textContent = data?.jenis || "-";
       $("display-teknik").textContent = data?.teknik || "-";
       $("display-media").textContent = data?.media || "-";
@@ -773,7 +800,9 @@
       const presetFields = {
         "student-school": data?.sekolah || "",
         "student-teacher": data?.guru || "",
+        "student-class": data?.kelas || "",
         "art-type": data?.jenis || "",
+        "art-name": data?.tajuk || "",
         "art-media": data?.media || "",
         "art-materials": data?.bahan || data?.media || "",
         "art-technique": data?.teknik || "",
@@ -795,6 +824,8 @@
       const presetData = {
         sekolah: getActiveSchool()?.sekolah || $("guru-sekolah").value.trim(),
         guru: $("guru-nama").value.trim(),
+        kelas: $("guru-kelas").value.trim(),
+        tajuk: $("guru-tajuk").value.trim(),
         jenis: $("guru-jenis").value.trim(),
         media: $("guru-media").value.trim(),
         bahan: $("guru-bahan").value.trim(),
@@ -818,7 +849,7 @@
       localStorage.removeItem(getActivePresetKey());
       teacherSchoolVerified = false;
       verifiedTeacherSchool = "";
-      ["guru-sekolah", "guru-nama", "guru-jenis", "guru-media", "guru-bahan", "guru-teknik", "guru-unsur", "guru-prinsip"].forEach(id => {
+      ["guru-sekolah", "guru-nama", "guru-kelas", "guru-tajuk", "guru-jenis", "guru-media", "guru-bahan", "guru-teknik", "guru-unsur", "guru-prinsip"].forEach(id => {
         if($(id)) $(id).value = "";
       });
       $("teacher-school-check").value = "";
@@ -834,7 +865,7 @@
       try { data = JSON.parse(localStorage.getItem(getActivePresetKey()) || localStorage.getItem(TEACHER_PRESET_KEY) || "null"); }
       catch(error) { data = null; }
       if(!data) return;
-      const fields = { "guru-sekolah": data.sekolah, "guru-nama": data.guru, "guru-jenis": data.jenis, "guru-media": data.media, "guru-bahan": data.bahan, "guru-teknik": data.teknik, "guru-unsur": data.unsur, "guru-prinsip": data.prinsip, "teacher-school-check": data.sekolah };
+      const fields = { "guru-sekolah": data.sekolah, "guru-nama": data.guru, "guru-kelas": data.kelas, "guru-tajuk": data.tajuk, "guru-jenis": data.jenis, "guru-media": data.media, "guru-bahan": data.bahan, "guru-teknik": data.teknik, "guru-unsur": data.unsur, "guru-prinsip": data.prinsip, "teacher-school-check": data.sekolah };
       Object.entries(fields).forEach(([id, value]) => { if($(id)) $(id).value = value || ""; });
     }
 
@@ -882,7 +913,7 @@
       }
       if(resendButton) {
         resendButton.classList.toggle("hidden", navigator.onLine ? !pending.length : false);
-        resendButton.style.display = navigator.onLine && pending.length ? "inline-block" : "none";
+        resendButton.style.display = pending.length ? "inline-block" : "none";
       }
     }
 
@@ -1140,10 +1171,31 @@
     });
     $("print-report").onclick = () => window.print();
     $("delete-report-all").onclick = deleteFilteredReports;
+    $("sync-pending-btn").onclick = hantarSemulaDataPending;
+    $("clear-student-form").onclick = () => {
+      $("student-form").reset();
+      $("self-assessment-panel").classList.add("hidden");
+      $("student-error").classList.add("hidden");
+    };
     $("filter-year").onchange = renderTeacher;
     $("filter-status").onchange = renderTeacher;
     $("filter-class").oninput = renderTeacher;
     $("filter-student").onchange = renderTeacher;
+    $("result-form").onsubmit = event => {
+      event.preventDefault();
+      const name = $("result-name").value.trim().toLocaleLowerCase("ms-MY");
+      const school = normaliseSchool($("result-school").value);
+      const resultMessage = $("result-message");
+      const matches = records.filter(record => normaliseSchool(record.nama_murid) === name && normaliseSchool(record.sekolah) === school);
+      if (!matches.length) {
+        resultMessage.className = "error mt-4";
+        resultMessage.textContent = "Rekod murid tidak ditemui. Semak nama dan sekolah yang dimasukkan.";
+        return;
+      }
+      const assessed = matches.filter(record => record.status === "Dinilai");
+      resultMessage.className = "student-result-table-wrap mt-4";
+      resultMessage.innerHTML = assessed.length ? `<div class="p-3"><strong>Keputusan ${escapeHTML($("result-name").value.trim())}</strong><table class="student-result-table mt-3"><thead><tr><th>Tajuk</th><th>Markah</th><th>TP</th><th>Ulasan</th><th>Aktiviti Susulan</th></tr></thead><tbody>${assessed.map(record => `<tr><td>${escapeHTML(record.tajuk_karya)}</td><td>${Number(record.total_score || 0)} / 100</td><td>${escapeHTML(record.tp || getPerformanceLevel(Number(record.total_score || 0)))}</td><td>${escapeHTML(record.ulasan_guru || "-")}</td><td>${escapeHTML(record.aktiviti_susulan || "-")}</td></tr>`).join("")}</tbody></table></div>` : "Karya anda sudah diterima tetapi belum dinilai oleh guru.";
+    };
     if($("report-year")) $("report-year").onchange = renderTeacher;
     if($("report-class")) $("report-class").oninput = renderTeacher;
     $("delete-record").onclick = deleteSelectedRecord;
@@ -1432,7 +1484,7 @@
 // =========================================================
 
 function getGeminiApiKey() {
-  return localStorage.getItem("gemini_api_key") || "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";
+  return localStorage.getItem("gemini_api_key") || "";
 }
 
 function requestOpenRouterKey() {
@@ -1451,7 +1503,7 @@ function loadGeminiKey() {
   }
 }
 
-async function analisisKaryaDenganGemini(karyaData, base64Image) {
+async function analisisKaryaDenganGemini(karyaData, base64Image, bolehCubaSemula = true) {
   const apiKey = getGeminiApiKey() || requestOpenRouterKey();
   if (!apiKey || apiKey.includes("MASUKKAN_KEY")) {
     throw new Error("Sila masukkan API key OpenRouter yang sah.");
@@ -1518,6 +1570,14 @@ Sila berikan maklum balas dalam FORMAT JSON SAHAJA:
     let errData;
     try { errData = await response.json(); }
     catch(error) { errData = { error: { message: response.statusText } }; }
+    if (response.status === 401) {
+      localStorage.removeItem("gemini_api_key");
+      if (bolehCubaSemula) {
+        const newApiKey = requestOpenRouterKey();
+        if (newApiKey) return analisisKaryaDenganGemini(karyaData, base64Image, false);
+      }
+      throw new Error("API key OpenRouter tidak sah atau telah tamat. Sila masukkan key baharu.");
+    }
     throw new Error(`OpenRouter Error (${response.status}): ${errData.error?.message || JSON.stringify(errData)}`);
   }
 
@@ -1598,62 +1658,98 @@ Sila berikan maklum balas dalam FORMAT JSON SAHAJA:
       }
     }
 
-    async function janaPenilaianKendiriAI() {
-      const form = $("student-form");
-      if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-      }
-      const imageFile = $("art-image").files[0];
-      if (!imageFile) {
-        toast("Sila pilih gambar karya dahulu.", "error");
-        return;
-      }
-      const imageData = await new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => resolve("");
-        reader.readAsDataURL(imageFile);
-      });
-      if (!imageData) {
-        toast("Gambar karya tidak dapat dibaca.", "error");
-        return;
-      }
+async function janaPenilaianKendiriAI() {
+  const button = $("self-assessment-btn");
+  if (button) button.disabled = true;
 
-      const button = $("self-assessment-btn");
-      button.disabled = true;
-      const artwork = getArtworkContext();
-      try {
-        const aiResult = await analisisKaryaDenganGemini({
-          nama: artwork.namaMurid,
-          tajuk: artwork.tajukKarya,
-          jenis: artwork.jenisKarya,
-          media: artwork.media,
-          bahan: artwork.bahan,
-          teknik: artwork.teknik,
-          unsurSeni: artwork.unsurSeni,
-          prinsipRekaan: artwork.prinsipRekaan,
-          markah: "belum dinilai",
-          tp: "akan ditentukan oleh AI"
-        }, imageData);
-        const scoreValues = rubric.map(item => {
-          const score = Number(aiResult.markah_aspek?.[item.key]);
-          return Number.isFinite(score) ? Math.max(0, Math.min(item.max, Math.round(score))) : 0;
-        });
-        const total = scoreValues.reduce((sum, score) => sum + score, 0);
-        const tp = getPerformanceLevel(total);
-        $("self-score-title").textContent = `${tp} · ${total} / 100`;
-        $("self-score-badge").textContent = total;
-        $("self-score-details").innerHTML = rubric.map((item, index) => `<div class="self-score-card"><strong>${escapeHTML(item.label)}</strong><p>${scoreValues[index]} / ${item.max}</p></div>`).join("");
-        $("self-suggestion-text").textContent = `${aiResult.ulasan || "Analisis AI berjaya dijana."} Aktiviti susulan: ${aiResult.aktiviti_susulan || "Teruskan memperkemas karya."}`;
-        $("self-assessment-panel").classList.remove("hidden");
-        toast(`Penilaian kendiri AI berjaya: ${total}/100 (${tp}).`);
-      } catch (error) {
-        toast(`Penilaian kendiri AI gagal: ${error.message}`, "error");
-      } finally {
-        button.disabled = false;
-      }
-    }
+  const nama = $("student-name")?.value.trim() || "Murid";
+  const media = $("ref_media")?.value.trim() || $("art-media")?.value.trim() || "media pilihan";
+  const teknik = $("ref_teknik")?.value.trim() || $("art-technique")?.value.trim() || "teknik yang dipelajari";
+  const tajuk = $("art-name")?.value.trim() || "karya saya";
+  const imageFile = $("art-image")?.files[0];
+  let imageData = "";
+  let m1 = 0, m2 = 0, m3 = 0, m4 = 0, m5 = 0;
+  let cadanganAI = "";
+  let sumberPenilaian = "AI vision OpenRouter";
+
+  try {
+    if (!imageFile) throw new Error("Gambar karya diperlukan.");
+    if (!navigator.onLine) throw new Error("offline");
+    imageData = await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(imageFile);
+    });
+    if (!imageData) throw new Error("Gambar tidak dapat dibaca.");
+
+    const aiResult = await analisisKaryaDenganGemini({
+      nama, tajuk, media, teknik, markah: "belum dinilai", tp: "akan ditentukan"
+    }, imageData);
+    if (!aiResult?.markah_aspek) throw new Error("AI tidak mengembalikan markah rubrik.");
+    m1 = Math.max(0, Math.min(20, Math.round(Number(aiResult.markah_aspek.persepsi_visual) || 0)));
+    m2 = Math.max(0, Math.min(25, Math.round(Number(aiResult.markah_aspek.aplikasi_seni) || 0)));
+    m3 = Math.max(0, Math.min(30, Math.round(Number(aiResult.markah_aspek.ekspresi_kreatif) || 0)));
+    m4 = Math.max(0, Math.min(15, Math.round(Number(aiResult.markah_aspek.apresiasi_seni) || 0)));
+    m5 = Math.max(0, Math.min(10, Math.round(Number(aiResult.markah_aspek.sikap_sahsiah) || 0)));
+    cadanganAI = aiResult.aktiviti_susulan || aiResult.ulasan || "";
+  } catch (err) {
+    console.warn("AI vision tidak tersedia; menggunakan templat lokal.", err);
+    sumberPenilaian = "Templat lokal (AI tidak tersedia)";
+    m1 = 12; m2 = 15; m3 = 18; m4 = 8; m5 = 7;
+  }
+
+  if (!cadanganAI) {
+    cadanganAI = `Bagi karya "${tajuk}" menggunakan ${media} dan teknik ${teknik}:\n` +
+      `1. Untuk meningkatkan Persepsi Visual & Aplikasi Seni: Percayakan lagi ton warna dan tingkatkan kekemasan pada garisan luar.\n` +
+      `2. Untuk meningkatkan Ekspresi Kreatif: Tambahkan sedikit elemen latar belakang supaya komposisi kelihatan lebih seimbang.\n` +
+      `3. Untuk Apresiasi & Sahsiah: Lengkapkan refleksi kendiri dengan menceritakan cabaran yang anda hadapi semasa proses menatah/mewarna.`;
+  }
+
+  const total = m1 + m2 + m3 + m4 + m5;
+  const tp = getPerformanceLevel(total);
+  paparMarkahRubrikKendiri(m1, m2, m3, m4, m5, total, tp, cadanganAI);
+
+  toast(`Penilaian kendiri berjaya: ${total}/100 (${tp}) · ${sumberPenilaian}`);
+  if (button) button.disabled = false;
+}
+
+// FUNGSI PEMBANTU UNTUK MENGISI MARKAH KAD RUBRIK DAN MEMBUKA PANEL
+function paparMarkahRubrikKendiri(m1, m2, m3, m4, m5, total, tp, cadangan) {
+  // Masukkan markah mengikut elemen kad di skrin murid
+  if ($("self-m1")) $("self-m1").textContent = `${m1} / 20`;
+  if ($("self-m2")) $("self-m2").textContent = `${m2} / 25`;
+  if ($("self-m3")) $("self-m3").textContent = `${m3} / 30`;
+  if ($("self-m4")) $("self-m4").textContent = `${m4} / 15`;
+  if ($("self-m5")) $("self-m5").textContent = `${m5} / 10`;
+
+  if ($("self-score-title")) $("self-score-title").textContent = `Penilaian Kendiri: ${tp} (${total}/100)`;
+  if ($("self-score-badge")) $("self-score-badge").textContent = total;
+
+  if ($("self-suggestion-text")) {
+    $("self-suggestion-text").innerHTML = `
+      <div class="text-xs text-slate-700">
+        <strong class="text-slate-800 block mb-2">Penjelasan Markah dan Cadangan Mengikut Aspek</strong>
+        <div class="student-result-table-wrap">
+          <table class="student-result-table !min-w-0">
+            <thead><tr><th>Aspek</th><th>Markah</th><th>Penjelasan dan cadangan</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Persepsi Visual</strong></td><td>${m1}/20</td><td>Penggunaan unsur seni dan prinsip rekaan dinilai berdasarkan imej karya. <strong class="text-indigo-600">Cadangan:</strong> Pertingkatkan kontras dan pelbagaikan ton warna untuk menonjolkan subjek utama.</td></tr>
+              <tr><td><strong>Aplikasi Seni</strong></td><td>${m2}/25</td><td>Penguasaan media dan teknik dinilai melalui hasil visual. <strong class="text-indigo-600">Cadangan:</strong> Perkemaskan garisan luar dan elakkan warna terkeluar dari garisan.</td></tr>
+              <tr><td><strong>Ekspresi Kreatif</strong></td><td>${m3}/30</td><td>Gubahan dan olahan idea dinilai berdasarkan komposisi karya. <strong class="text-indigo-600">Cadangan:</strong> Tambahkan perincian latar supaya ruang kelihatan lebih seimbang.</td></tr>
+              <tr><td><strong>Apresiasi Seni</strong></td><td>${m4}/15</td><td>Refleksi murid dinilai berdasarkan penerangan karya dan proses. <strong class="text-indigo-600">Cadangan:</strong> Lengkapkan refleksi dengan perasaan dan cabaran semasa menghasilkan karya.</td></tr>
+              <tr><td><strong>Sikap dan Sahsiah</strong></td><td>${m5}/10</td><td>Kekemasan dan kesungguhan dinilai melalui hasil akhir. <strong class="text-indigo-600">Cadangan:</strong> Pastikan permukaan kertas bersih dan bebas daripada kesan comot.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  const panel = $("self-assessment-panel");
+  if (panel) {
+    panel.classList.remove("hidden");
+  }
+}
 
     // =========================================================
     // FUNGSI RENDER UTAMA (Laman Guru & Galeri)
@@ -1855,6 +1951,13 @@ Sila berikan maklum balas dalam FORMAT JSON SAHAJA:
       if (guidedReflectionBtn) guidedReflectionBtn.onclick = janaTemplatApresiasi;
       const selfAssessmentBtn = $("self-assessment-btn");
       if (selfAssessmentBtn) selfAssessmentBtn.onclick = janaPenilaianKendiriAI;
+
+      window.addEventListener("online", () => {
+        kemaskiniStatusPendingUI();
+        hantarSemulaDataPending();
+      });
+      window.addEventListener("offline", kemaskiniStatusPendingUI);
+      kemaskiniStatusPendingUI();
 
       renderTeacher();
     });
