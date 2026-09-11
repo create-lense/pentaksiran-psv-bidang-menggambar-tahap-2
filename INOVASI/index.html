@@ -1235,8 +1235,10 @@
         };
         records = [...records, record];
         saveRecords(records);
+        queuePendingRecord(record);
+        renderTeacher();
         const synced = await syncRecord(record);
-        toast(synced ? "Karya berjaya dihantar kepada guru." : "Karya disimpan dalam Pending dan akan dihantar semula apabila sambungan tersedia.");
+        toast(synced ? "Karya berjaya dihantar kepada guru dan direkodkan." : "Karya berjaya direkodkan dalam Pending. Tekan Hantar semula apabila sambungan tersedia.");
         form.reset();
         $("self-assessment-panel").classList.add("hidden");
       } catch (error) {
