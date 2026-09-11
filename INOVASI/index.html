@@ -1493,15 +1493,21 @@
 // =========================================================
 
 function getGeminiApiKey() {
-  const DEFAULT_OPENROUTER_KEY = "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";
-  return localStorage.getItem("openrouter_api_key") || DEFAULT_OPENROUTER_KEY;
+  const DEFAULT_KEY = "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";
+  const savedKey = localStorage.getItem("openrouter_api_key") || localStorage.getItem("gemini_api_key");
+  if (savedKey && !localStorage.getItem("openrouter_api_key")) {
+    localStorage.setItem("openrouter_api_key", savedKey);
+    localStorage.removeItem("gemini_api_key");
+  }
+  return savedKey || DEFAULT_KEY;
 }
 
 function requestOpenRouterKey() {
   const key = window.prompt("Masukkan API key OpenRouter. Key disimpan pada peranti ini dan tidak dipaparkan dalam halaman:");
   const trimmedKey = String(key || "").trim();
   if (!trimmedKey) return "";
-  localStorage.setItem("gemini_api_key", trimmedKey);
+  localStorage.setItem("openrouter_api_key", trimmedKey);
+  localStorage.removeItem("gemini_api_key");
   return trimmedKey;
 }
 
@@ -1581,6 +1587,7 @@ Sila berikan maklum balas dalam FORMAT JSON SAHAJA:
     try { errData = await response.json(); }
     catch(error) { errData = { error: { message: response.statusText } }; }
     if (response.status === 401) {
+      localStorage.removeItem("openrouter_api_key");
       localStorage.removeItem("gemini_api_key");
       throw new Error("API key OpenRouter tidak sah atau telah tamat. Sila masukkan key baharu.");
     }
