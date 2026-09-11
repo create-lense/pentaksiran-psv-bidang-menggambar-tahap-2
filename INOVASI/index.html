@@ -1514,97 +1514,10 @@ function loadGeminiKey() {
 }
 
 async function analisisKaryaDenganGemini(karyaData, base64Image, bolehCubaSemula = true) {
-  // 1. API Key OpenRouter disuntik secara automatik & tersembunyi
-  const apiKey = "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";
-
-  // 2. Jika TIADA gambar atau peranti OFFLINE: Bertukar ke Analisis Tempatan secara automatik
-  if (!base64Image || !navigator.onLine) {
-    return {
-      markah_aspek: {
-        persepsi_visual: 16,
-        aplikasi_seni: 20,
-        ekspresi_kreatif: 24,
-        apresiasi_seni: 12,
-        sahsiah: 8
-      },
-      ulasan_keseluruhan: "Karya menunjukkan penguasaan asas yang baik dari segi penggunaan media dan teknik. Komposisi ruang diolah dengan seimbang.",
-      cadangan_penambahbaikan: "Bimbing murid untuk memberikan penekanan pada kekemasan garisan perincian dan ton warna.",
-      cadangan_tindakan: "Aktiviti Pengayaan: Latihan tambahan bagi mempelbagaikan ton warna pada latar belakang karya."
-    };
+  const apiKey = getGeminiApiKey();
+  if (!apiKey || apiKey.includes("MASUKKAN_KEY")) {
+    throw new Error("Sila masukkan API key OpenRouter yang sah.");
   }
-
-  const url = "https://openrouter.ai/api/v1/chat/completions";
-
-  const promptText = `Anda ialah Guru Pentaksir Pendidikan Seni Visual (PSV) Sekolah Rendah.
-Analisis gambar lukisan murid dan maklumat berikut:
-- Nama: ${karyaData.nama || 'Murid'}
-- Tajuk: ${karyaData.tajuk || 'Karya Seni'}
-- Markah: ${karyaData.markah || 60}/100 (${karyaData.tp || 'TP3'})
-Rubrik markah maksimum: Persepsi Visual 20, Aplikasi Seni 25, Ekspresi Kreatif 30, Apresiasi Seni 15, Sahsiah 10.
-
-Sila berikan maklum balas dalam FORMAT JSON SAHAJA:
-{
-  "markah_aspek": {
-    "persepsi_visual": 16,
-    "aplikasi_seni": 20,
-    "ekspresi_kreatif": 24,
-    "apresiasi_seni": 12,
-    "sahsiah": 8
-  },
-  "ulasan_keseluruhan": "Ulasan guru...",
-  "cadangan_penambahbaikan": "Cadangan...",
-  "cadangan_tindakan": "Aktiviti susulan..."
-}`;
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": window.location.href,
-        "X-Title": "PWA Pentaksiran PSV"
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash-exp:free",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: promptText },
-              { type: "image_url", image_url: { url: base64Image } }
-            ]
-          }
-        ]
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error("Respon API gagal: " + response.status);
-    }
-
-    const data = await response.json();
-    const content = data.choices[0]?.message?.content || "";
-    const cleanJson = content.replace(/```json|```/g, "").trim();
-    return JSON.parse(cleanJson);
-
-  } catch (error) {
-    console.warn("AI tidak bertindak balas, menggunakan jawapan analisis tempatan fallback.", error);
-    // Fallback tempatan jika API OpenRouter menghadapi gangguan
-    return {
-      markah_aspek: {
-        persepsi_visual: 15,
-        aplikasi_seni: 18,
-        ekspresi_kreatif: 22,
-        apresiasi_seni: 11,
-        sahsiah: 8
-      },
-      ulasan_keseluruhan: "Karya berjaya dihasilkan dengan baik mengikut kriteria utama.",
-      cadangan_penambahbaikan: "Perkemaskan lagi bahagian garisan luar dan kekemasan media.",
-      cadangan_tindakan: "Aktiviti Pengukuhan: Latihan kemahiran mewarna secara bertingkat."
-    };
-  }
-}
   if (!base64Image) {
     throw new Error("Gambar karya diperlukan untuk analisis AI vision.");
   }
